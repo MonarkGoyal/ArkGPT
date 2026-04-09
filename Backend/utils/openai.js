@@ -853,7 +853,7 @@ I can break it down simply, add examples, and show code if needed.`;
         return getClarifyingReply(contextualInput || input);
 };
 
-const getOpenAIAPIResponse = async(message, history = []) => {
+const getOpenAIAPIResponse = async(message, history = [], mode = "default") => {
     if(!process.env.OPENAI_API_KEY) {
                 return getOfflineAssistantReply(message, history);
     }
@@ -869,6 +869,10 @@ const getOpenAIAPIResponse = async(message, history = []) => {
         ? normalizedHistory
         : [{ role: "user", content: message }];
 
+    const systemPrompt = mode === "tutor"
+        ? "You are a highly capable tutor. Solve the user's problem directly, step by step, and do not default to generic encouragement. For math, code, logic, and reasoning questions, produce the answer first, then a concise explanation. If the prompt is vague, ask one clarifying question instead of giving a generic fallback."
+        : "You are a helpful assistant that answers any user query directly, clearly, and concisely.";
+
     const options = {
         method: "POST",
         headers: {
@@ -879,7 +883,7 @@ const getOpenAIAPIResponse = async(message, history = []) => {
             model: "gpt-4o-mini",
             messages: [{
                 role: "system",
-                content: "You are a helpful assistant that answers any user query directly, clearly, and concisely."
+                content: systemPrompt
             }, ...conversation]
         })
     };

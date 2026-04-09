@@ -119,7 +119,7 @@ router.delete("/thread/:threadId", async (req, res) => {
 });
 
 router.post("/chat", async(req, res) => {
-    const {threadId, message} = req.body;
+    const {threadId, message, mode} = req.body;
     const trimmedMessage = message?.trim();
 
     if(!threadId || !trimmedMessage) {
@@ -153,7 +153,7 @@ router.post("/chat", async(req, res) => {
             thread.title = trimmedMessage;
         }
 
-        const assistantReply = await getOpenAIAPIResponse(trimmedMessage, getModelContext(thread.messages));
+        const assistantReply = await getOpenAIAPIResponse(trimmedMessage, getModelContext(thread.messages), mode);
         if(!assistantReply) {
             return res.status(502).json({error: "OpenAI did not return a valid response"});
         }

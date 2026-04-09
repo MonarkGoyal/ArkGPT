@@ -1,7 +1,7 @@
 import "./ChatWindow.css";
 import Chat from "./Chat.jsx";
 import { MyContext } from "./MyContext.jsx";
-import { useContext, useState } from "react";
+import { useContext, useEffect, useState } from "react";
 import {ScaleLoader} from "react-spinners";
 import { apiUrl } from "./config.js";
 import getLocalAssistantReply from "./localAssistant.js";
@@ -16,6 +16,11 @@ function ChatWindow() {
     const [feedbackMessage, setFeedbackMessage] = useState("");
     const [feedbackStatus, setFeedbackStatus] = useState("");
     const [feedbackLoading, setFeedbackLoading] = useState(false);
+    const [tutorMode, setTutorMode] = useState(() => localStorage.getItem("arkgpt_tutor_mode") === "true");
+
+    useEffect(() => {
+        localStorage.setItem("arkgpt_tutor_mode", String(tutorMode));
+    }, [tutorMode]);
 
     const getReply = async () => {
         if(loading) return;
@@ -40,7 +45,8 @@ function ChatWindow() {
             },
             body: JSON.stringify({
                 message: userMessage,
-                threadId: currThreadId
+                threadId: currThreadId,
+                mode: tutorMode ? "tutor" : "default"
             })
         };
 
@@ -63,7 +69,7 @@ function ChatWindow() {
             appendLocalMessages(currThreadId, threadTitle, [{ role: "assistant", content: res.reply }]);
         } catch(err) {
             console.log(err);
-            const fallbackReply = getLocalAssistantReply(userMessage, prevChats);
+            const fallbackReply = getLocalAssistantReply(userMessage, prevChats, tutorMode ? "tutor" : "default");
             setPrevChats((prevChats) => [
                 ...prevChats,
                 { role: "assistant", content: fallbackReply }
@@ -139,6 +145,9 @@ function ChatWindow() {
             {
                 isOpen && 
                 <div className="dropDown">
+                    <div className="dropDownItem" onClick={() => setTutorMode((value) => !value)}>
+                        <i className="fa-solid fa-graduation-cap"></i> Tutor mode {tutorMode ? "on" : "off"}
+                    </div>
                     <div className="dropDownItem" onClick={openFeedback}><i className="fa-solid fa-comment-dots"></i> Send feedback</div>
                     <div className="dropDownItem"><i className="fa-solid fa-gear"></i> Settings</div>
                     <div className="dropDownItem"><i className="fa-solid fa-cloud-arrow-up"></i> Upgrade plan</div>
