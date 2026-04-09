@@ -216,10 +216,21 @@ Move slowly and stop if pain increases. If this is due to injury, persistent pai
 If you want, I can turn this into a 5-minute, 10-minute, or 15-minute routine.`;
 };
 
-const getGeneralContextReply = (input) => {
-    return `For ${input}, the most useful next step is to be more specific about the goal, format, or outcome.
+const getUnknownReply = (input) => {
+    const normalized = (input || "").trim();
+    if(normalized.length <= 8) {
+        return "I did not fully understand that. Please rephrase with a little more detail.";
+    }
 
-I can help with code, study notes, plans, explanations, or step-by-step guidance. If you tell me the exact result you want, I will answer directly.`;
+    const variants = [
+        `I am not fully sure what you want from "${normalized}". Rephrase it a little and I will answer directly.`,
+        `I might be missing the intent of "${normalized}". Add a bit more detail or an example and I will respond more accurately.`,
+        `I did not catch that clearly. Tell me the goal, and I will give you a direct answer instead of a generic one.`,
+        `That is a bit unclear to me. If you reword it, I can answer with something more specific.`
+    ];
+
+    const score = [...normalized].reduce((sum, character) => sum + character.charCodeAt(0), 0);
+    return variants[score % variants.length];
 };
 
 const getBasicMathLessonReply = () => {
@@ -839,7 +850,7 @@ Please share the exact problem statement, and I will return complete runnable co
 I can break it down simply, add examples, and show code if needed.`;
     }
 
-        return getGeneralContextReply(contextualInput || input);
+        return getUnknownReply(contextualInput || input);
 };
 
 const getOpenAIAPIResponse = async(message, history = []) => {
