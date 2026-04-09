@@ -3,8 +3,7 @@ import react from '@vitejs/plugin-react'
 
 // https://vite.dev/config/
 export default defineConfig(() => {
-  const repositoryName = process.env.GITHUB_REPOSITORY?.split("/")[1];
-  const basePath = process.env.VITE_BASE_PATH?.trim() || (repositoryName ? `/${repositoryName}/` : "/");
+  const basePath = process.env.VITE_BASE_PATH?.trim() || "/ArkGPT/";
 
   return {
     base: basePath,
