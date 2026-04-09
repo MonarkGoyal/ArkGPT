@@ -1,0 +1,33 @@
+ :root {
+    color-scheme: dark;
+    --bg: #0b1020;
+    --panel: rgba(12, 18, 35, 0.84);
+    --panel-strong: #11172b;
+    --border: rgba(255, 255, 255, 0.08);
+    --text: #eef2ff;
+    --muted: #a6b0cf;
+    --accent: #6d7cff;
+    --accent-strong: #8592ff;
+}
+
+* {
+    color: var(--text);
+    font-family: Roboto, 'Open Sans', 'Helvetica Neue', sans-serif;
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    padding: 0;
+    background:
+        radial-gradient(circle at top left, rgba(109, 124, 255, 0.18), transparent 34%),
+        radial-gradient(circle at bottom right, rgba(0, 214, 201, 0.12), transparent 32%),
+        var(--bg);
+}
+
+.app {
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.02), rgba(255, 255, 255, 0.01));
+    display: flex;
+    min-height: 100vh;
+    overflow: hidden;
+}
