@@ -850,7 +850,7 @@ Please share the exact problem statement, and I will return complete runnable co
 I can break it down simply, add examples, and show code if needed.`;
     }
 
-        return getUnknownReply(contextualInput || input);
+        return getClarifyingReply(contextualInput || input);
 };
 
 const getOpenAIAPIResponse = async(message, history = []) => {

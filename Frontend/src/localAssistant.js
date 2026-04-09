@@ -290,17 +290,17 @@ Move slowly and stop if pain increases. If this is due to injury, persistent pai
 If you want, I can turn this into a 5-minute, 10-minute, or 15-minute routine.`;
 };
 
-const getUnknownReply = (input) => {
+const getClarifyingReply = (input) => {
     const normalized = (input || "").trim();
     if(normalized.length <= 8) {
-        return "I did not fully understand that. Please rephrase with a little more detail.";
+        return "I did not fully understand that. Do you want a direct answer, code, or a step-by-step explanation?";
     }
 
     const variants = [
-        `I am not fully sure what you want from "${normalized}". Rephrase it a little and I will answer directly.`,
-        `I might be missing the intent of "${normalized}". Add a bit more detail or an example and I will respond more accurately.`,
-        `I did not catch that clearly. Tell me the goal, and I will give you a direct answer instead of a generic one.`,
-        `That is a bit unclear to me. If you reword it, I can answer with something more specific.`
+        `I did not fully understand "${normalized}". Is this about code, math, study help, or something else?`,
+        `I am not fully sure what you want from "${normalized}". Tell me the exact result you want and I will answer directly.`,
+        `That is a bit unclear to me. Can you rephrase it and say whether you want an explanation, code, or a plan?`,
+        `I did not catch that clearly. Add one more detail and I will give you a more specific answer.`
     ];
 
     const score = [...normalized].reduce((sum, character) => sum + character.charCodeAt(0), 0);
@@ -961,7 +961,7 @@ If you want a specific algorithm, share the name of the problem and I will give 
 I can break it down simply, add examples, and show code if needed.`;
     }
 
-    return getUnknownReply(contextualInput || input);
+    return getClarifyingReply(contextualInput || input);
 };
 
 export default getLocalAssistantReply;
