@@ -215,6 +215,67 @@ const getLearningTipsReply = () => {
 If you want, I can create a custom 7-day plan for your exact topic.`;
 };
 
+const getSevenDayLearningPlanReply = () => {
+    return `Perfect. Here is a practical 7-day learning plan you can start today:
+
+Day 1: Define your goal and baseline
+1) Write one clear goal (example: "Learn React basics to build a to-do app").
+2) List what you already know and what is confusing.
+3) Study 45 minutes, then write a 5-line summary from memory.
+
+Day 2: Core concepts only
+1) Learn the top 2-3 core concepts.
+2) Solve 3 small practice tasks.
+3) End with a short self-quiz without notes.
+
+Day 3: Guided practice
+1) Build a tiny guided project/tutorial.
+2) Pause after each step and predict the next step before seeing it.
+3) Write down 3 mistakes and fixes.
+
+Day 4: Build from scratch
+1) Rebuild a mini project without copying.
+2) If stuck, debug for 15 minutes before checking help.
+3) Note all gaps to review later.
+
+Day 5: Strengthen weak areas
+1) Spend 70% of time on weak topics from Day 4.
+2) Do spaced revision of Days 1-4 notes.
+3) Teach one concept out loud in simple words.
+
+Day 6: Real challenge day
+1) Solve 1 medium-level problem/project task.
+2) Time-box it to 60-90 minutes.
+3) Review solution quality and list improvements.
+
+Day 7: Review and next-step roadmap
+1) Re-test yourself on key concepts.
+2) Summarize what improved this week.
+3) Set your next 7-day plan with one level harder goal.
+
+Daily rule: 45-90 minutes focused work, no multitasking, and a short written recap after each session.`;
+};
+
+const isAffirmativeFollowUp = (text) => {
+    const normalized = (text || "").trim().toLowerCase();
+    return normalized === "yes" ||
+        normalized === "yes do that" ||
+        normalized === "do that" ||
+        normalized === "sure" ||
+        normalized === "ok" ||
+        normalized === "okay" ||
+        normalized === "go ahead" ||
+        normalized === "please do";
+};
+
+const lastAssistantAskedForPlanConfirmation = (history) => {
+    if(!Array.isArray(history) || history.length === 0) return false;
+    const previousAssistant = [...history].reverse().find((entry) => entry?.role === "assistant" && typeof entry?.content === "string");
+    if(!previousAssistant) return false;
+    const message = previousAssistant.content.toLowerCase();
+    return message.includes("7-day plan") || message.includes("7 day plan");
+};
+
 const getGeneralHelpfulReply = () => {
     return `I can help with that. Here is a quick way to move forward:
 
@@ -257,6 +318,10 @@ const getLocalAssistantReply = (message, history = []) => {
 
     if(!input) {
         return "Please share your question, and I will help right away.";
+    }
+
+    if(isAffirmativeFollowUp(rawLowered) && lastAssistantAskedForPlanConfirmation(history)) {
+        return getSevenDayLearningPlanReply();
     }
 
     if(rawLowered === "how are you" || rawLowered.includes("how are you")) {
