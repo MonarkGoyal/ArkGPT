@@ -4,9 +4,10 @@ import { MyContext } from "./MyContext.jsx";
 import { useContext, useState } from "react";
 import {ScaleLoader} from "react-spinners";
 import { apiUrl } from "./config.js";
+import getLocalAssistantReply from "./localAssistant.js";
 
 function ChatWindow() {
-    const {prompt, setPrompt, setReply, currThreadId, setPrevChats, setNewChat} = useContext(MyContext);
+    const {prompt, setPrompt, setReply, currThreadId, setPrevChats, setNewChat, prevChats} = useContext(MyContext);
     const [loading, setLoading] = useState(false);
     const [isOpen, setIsOpen] = useState(false);
 
@@ -53,7 +54,7 @@ function ChatWindow() {
             setReply(res.reply);
         } catch(err) {
             console.log(err);
-            const fallbackReply = `Request failed: ${err?.message || "Unknown error"}. Please verify backend server and environment variables.`;
+            const fallbackReply = getLocalAssistantReply(userMessage, prevChats);
             setPrevChats((prevChats) => [
                 ...prevChats,
                 { role: "assistant", content: fallbackReply }
