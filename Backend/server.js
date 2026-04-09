@@ -2,13 +2,30 @@ import express from "express";
 import "dotenv/config";
 import cors from "cors";
 import mongoose from "mongoose";
+import { fileURLToPath } from "url";
 import chatRoutes from "./routes/chat.js";
 
 const app = express();
-const PORT = 8080;
+const PORT = process.env.PORT || 8080;
+
+const allowedOrigins = (process.env.CORS_ORIGIN || "")
+    .split(",")
+    .map((origin) => origin.trim())
+    .filter(Boolean);
 
 app.use(express.json());
-app.use(cors());
+app.use(cors({
+    origin: allowedOrigins.length > 0 ? allowedOrigins : true,
+    methods: ["GET", "POST", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type"],
+}));
+
+app.get("/health", (req, res) => {
+    res.json({
+        status: "ok",
+        database: mongoose.connection.readyState === 1 ? "connected" : "disconnected",
+    });
+});
 
 app.use("/api", chatRoutes);
 
@@ -33,7 +50,15 @@ const startServer = async () => {
     });
 };
 
-startServer();
+const isMainModule = process.argv[1]
+    ? fileURLToPath(import.meta.url) === process.argv[1]
+    : false;
+
+if(isMainModule) {
+    startServer();
+}
+
+export default app;
 
 
 // app.post("/test", async (req, res) => {

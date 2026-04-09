@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import express from "express";
 import request from "supertest";
 import chatRoutes from "../routes/chat.js";
+import app from "../server.js";
 
 const buildApp = () => {
     const app = express();
@@ -122,4 +123,11 @@ test("GET /api/feedback returns saved feedback entries without database", async 
     assert.equal(response.status, 200);
     assert.equal(Array.isArray(response.body), true);
     assert.ok(response.body.length >= 1);
+});
+
+test("GET /health returns ok status", async () => {
+    const response = await request(app).get("/health");
+
+    assert.equal(response.status, 200);
+    assert.equal(response.body.status, "ok");
 });
