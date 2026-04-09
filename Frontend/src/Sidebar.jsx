@@ -4,6 +4,7 @@ import { MyContext } from "./MyContext.jsx";
 import {v1 as uuidv1} from "uuid";
 import whiteLogo from "./assets/whitelogo.jpg";
 import { apiUrl } from "./config.js";
+import { deleteLocalThread, getLocalThreadMessages, getLocalThreadsSummary } from "./localHistory.js";
 
 function Sidebar() {
     const {allThreads, setAllThreads, currThreadId, setNewChat, setPrompt, setReply, setCurrThreadId, setPrevChats} = useContext(MyContext);
@@ -11,12 +12,14 @@ function Sidebar() {
     const getAllThreads = useCallback(async () => {
         try {
             const response = await fetch(apiUrl("/api/thread"));
+            if(!response.ok) throw new Error(`Request failed with status ${response.status}`);
             const res = await response.json();
             const filteredData = res.map(thread => ({threadId: thread.threadId, title: thread.title}));
             //console.log(filteredData);
             setAllThreads(filteredData);
         } catch(err) {
             console.log(err);
+            setAllThreads(getLocalThreadsSummary());
         }
     }, [setAllThreads]);
 
@@ -38,6 +41,7 @@ function Sidebar() {
 
         try {
             const response = await fetch(apiUrl(`/api/thread/${newThreadId}`));
+            if(!response.ok) throw new Error(`Request failed with status ${response.status}`);
             const res = await response.json();
             console.log(res);
             setPrevChats(res);
@@ -45,17 +49,24 @@ function Sidebar() {
             setReply(null);
         } catch(err) {
             console.log(err);
+            const localMessages = getLocalThreadMessages(newThreadId);
+            setPrevChats(localMessages);
+            setNewChat(false);
+            setReply(null);
         }
     }   
 
     const deleteThread = async (threadId) => {
         try {
             const response = await fetch(apiUrl(`/api/thread/${threadId}`), {method: "DELETE"});
-            const res = await response.json();
-            console.log(res);
+            if(response.ok) {
+                const res = await response.json();
+                console.log(res);
+            }
 
             //updated threads re-render
             setAllThreads(prev => prev.filter(thread => thread.threadId !== threadId));
+            deleteLocalThread(threadId);
 
             if(threadId === currThreadId) {
                 createNewChat();
@@ -63,6 +74,12 @@ function Sidebar() {
 
         } catch(err) {
             console.log(err);
+            setAllThreads(prev => prev.filter(thread => thread.threadId !== threadId));
+            deleteLocalThread(threadId);
+
+            if(threadId === currThreadId) {
+                createNewChat();
+            }
         }
     }
 

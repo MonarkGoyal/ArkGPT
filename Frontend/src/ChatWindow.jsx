@@ -5,6 +5,7 @@ import { useContext, useState } from "react";
 import {ScaleLoader} from "react-spinners";
 import { apiUrl } from "./config.js";
 import getLocalAssistantReply from "./localAssistant.js";
+import { appendLocalMessages } from "./localHistory.js";
 
 function ChatWindow() {
     const {prompt, setPrompt, setReply, currThreadId, setPrevChats, setNewChat, prevChats} = useContext(MyContext);
@@ -24,10 +25,12 @@ function ChatWindow() {
         setLoading(true);
         setNewChat(false);
         setPrompt("");
+        const threadTitle = userMessage.slice(0, 48) || "New Chat";
         setPrevChats((prevChats) => [
             ...prevChats,
             { role: "user", content: userMessage }
         ]);
+        appendLocalMessages(currThreadId, threadTitle, [{ role: "user", content: userMessage }]);
 
         console.log("message ", userMessage, " threadId ", currThreadId);
         const options = {
@@ -57,6 +60,7 @@ function ChatWindow() {
                 { role: "assistant", content: res.reply }
             ]);
             setReply(res.reply);
+            appendLocalMessages(currThreadId, threadTitle, [{ role: "assistant", content: res.reply }]);
         } catch(err) {
             console.log(err);
             const fallbackReply = getLocalAssistantReply(userMessage, prevChats);
@@ -65,6 +69,7 @@ function ChatWindow() {
                 { role: "assistant", content: fallbackReply }
             ]);
             setReply(fallbackReply);
+            appendLocalMessages(currThreadId, threadTitle, [{ role: "assistant", content: fallbackReply }]);
         }
         setLoading(false);
     }
