@@ -142,6 +142,73 @@ console.log(counter()); // 3
 Why it works: the returned function closes over the variable \`count\`, so it keeps state between calls.`;
 };
 
+const getTodoAppReply = () => {
+        return `Sure. Here is a simple React todo app you can use right away:
+
+\`\`\`jsx
+import { useState } from "react";
+
+export default function App() {
+    const [todo, setTodo] = useState("");
+    const [todos, setTodos] = useState([]);
+
+    const addTodo = () => {
+        const value = todo.trim();
+        if (!value) return;
+        setTodos([...todos, { id: Date.now(), text: value, done: false }]);
+        setTodo("");
+    };
+
+    const toggleTodo = (id) => {
+        setTodos(todos.map((item) =>
+            item.id === id ? { ...item, done: !item.done } : item
+        ));
+    };
+
+    const deleteTodo = (id) => {
+        setTodos(todos.filter((item) => item.id !== id));
+    };
+
+    return (
+        <div style={{ maxWidth: 420, margin: "40px auto", fontFamily: "sans-serif" }}>
+            <h1>Todo App</h1>
+            <div style={{ display: "flex", gap: 8 }}>
+                <input
+                    value={todo}
+                    onChange={(e) => setTodo(e.target.value)}
+                    placeholder="Add a task"
+                    style={{ flex: 1, padding: 10 }}
+                />
+                <button onClick={addTodo}>Add</button>
+            </div>
+
+            <ul style={{ padding: 0, marginTop: 20, listStyle: "none" }}>
+                {todos.map((item) => (
+                    <li key={item.id} style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
+                        <input type="checkbox" checked={item.done} onChange={() => toggleTodo(item.id)} />
+                        <span style={{ textDecoration: item.done ? "line-through" : "none", flex: 1 }}>
+                            {item.text}
+                        </span>
+                        <button onClick={() => deleteTodo(item.id)}>Delete</button>
+                    </li>
+                ))}
+            </ul>
+        </div>
+    );
+}
+
+// If you want, I can also give you a version with Tailwind, localStorage, or edit mode.
+
+This is a complete starter app, so you can paste it into App.jsx and run it.`;
+};
+
+const isAppBuildRequest = (text) => {
+        const normalized = (text || "").toLowerCase();
+        const hasBuildVerb = normalized.includes("make") || normalized.includes("build") || normalized.includes("create") || normalized.includes("develop") || normalized.includes("write");
+        const hasAppNoun = normalized.includes("app") || normalized.includes("todo") || normalized.includes("task") || normalized.includes("website") || normalized.includes("site") || normalized.includes("page") || normalized.includes("project") || normalized.includes("dashboard") || normalized.includes("calculator") || normalized.includes("game");
+        return hasBuildVerb && hasAppNoun;
+};
+
 const getLearningTipsReply = () => {
     return `Here are practical tips to learn anything faster:
 
@@ -393,6 +460,14 @@ How it works:
 3) Practice reading and debugging code instead of only watching tutorials.
 
 If you want, I can also give you a 7-day JavaScript learning plan.`;
+    }
+
+    if(
+        lowered.includes("todoapp") ||
+        (lowered.includes("todo") && (lowered.includes("app") || lowered.includes("list") || lowered.includes("task"))) ||
+        isAppBuildRequest(lowered)
+    ) {
+        return getTodoAppReply();
     }
 
     if(

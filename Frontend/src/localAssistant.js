@@ -215,13 +215,74 @@ const getLearningTipsReply = () => {
 If you want, I can create a custom 7-day plan for your exact topic.`;
 };
 
+const getTodoAppReply = () => {
+    return `Sure. Here is a simple React todo app you can use right away:
+
+\`\`\`jsx
+import { useState } from "react";
+
+export default function App() {
+  const [todo, setTodo] = useState("");
+  const [todos, setTodos] = useState([]);
+
+  const addTodo = () => {
+    const value = todo.trim();
+    if (!value) return;
+    setTodos([...todos, { id: Date.now(), text: value, done: false }]);
+    setTodo("");
+  };
+
+  const toggleTodo = (id) => {
+    setTodos(todos.map((item) =>
+      item.id === id ? { ...item, done: !item.done } : item
+    ));
+  };
+
+  const deleteTodo = (id) => {
+    setTodos(todos.filter((item) => item.id !== id));
+  };
+
+  return (
+    <div style={{ maxWidth: 420, margin: "40px auto", fontFamily: "sans-serif" }}>
+      <h1>Todo App</h1>
+      <div style={{ display: "flex", gap: 8 }}>
+        <input
+          value={todo}
+          onChange={(e) => setTodo(e.target.value)}
+          placeholder="Add a task"
+          style={{ flex: 1, padding: 10 }}
+        />
+        <button onClick={addTodo}>Add</button>
+      </div>
+
+      <ul style={{ padding: 0, marginTop: 20, listStyle: "none" }}>
+        {todos.map((item) => (
+          <li key={item.id} style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
+            <input type="checkbox" checked={item.done} onChange={() => toggleTodo(item.id)} />
+            <span style={{ textDecoration: item.done ? "line-through" : "none", flex: 1 }}>
+              {item.text}
+            </span>
+            <button onClick={() => deleteTodo(item.id)}>Delete</button>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+\`\`\`
+
+If you want, I can also give you a version with Tailwind, localStorage, or edit mode.
+
+This is a complete starter app, so you can paste it into App.jsx and run it.`;
+};
+
 const getSevenDayLearningPlanReply = (topic = "your topic") => {
     return `Perfect. Here is a practical 7-day learning plan for ${topic}:
 
 Day 1: Define your goal and baseline
-1) Write one clear goal (example: "Learn React basics to build a to-do app").
+1) Write one clear goal.
 2) List what you already know and what is confusing.
-3) Study 45 minutes, then write a 5-line summary from memory.
+3) Study 45 minutes, then write a short summary from memory.
 
 Day 2: Core concepts only
 1) Learn the top 2-3 core concepts.
@@ -230,18 +291,18 @@ Day 2: Core concepts only
 
 Day 3: Guided practice
 1) Build a tiny guided project/tutorial.
-2) Pause after each step and predict the next step before seeing it.
+2) Pause after each step and predict the next step.
 3) Write down 3 mistakes and fixes.
 
 Day 4: Build from scratch
 1) Rebuild a mini project without copying.
-2) If stuck, debug for 15 minutes before checking help.
+2) Debug for 15 minutes before checking help.
 3) Note all gaps to review later.
 
 Day 5: Strengthen weak areas
-1) Spend 70% of time on weak topics from Day 4.
-2) Do spaced revision of Days 1-4 notes.
-3) Teach one concept out loud in simple words.
+1) Spend 70% of time on weak topics.
+2) Do spaced revision of previous notes.
+3) Teach one concept out loud.
 
 Day 6: Real challenge day
 1) Solve 1 medium-level problem/project task.
@@ -251,9 +312,9 @@ Day 6: Real challenge day
 Day 7: Review and next-step roadmap
 1) Re-test yourself on key concepts.
 2) Summarize what improved this week.
-3) Set your next 7-day plan with one level harder goal.
+3) Set your next 7-day plan with a harder goal.
 
-Daily rule: 45-90 minutes focused work, no multitasking, and a short written recap after each session.`;
+Daily rule: 45-90 minutes focused work, no multitasking, and a short written recap.`;
 };
 
 const getStepByStepPlanReply = (topic = "this topic") => {
@@ -263,8 +324,8 @@ const getStepByStepPlanReply = (topic = "this topic") => {
 2) List the 3 core concepts you must understand first.
 3) Study one concept, then do one short practice task immediately.
 4) Build a tiny example or mini-project.
-5) Review mistakes and create a short checklist to avoid repeating them.
-6) Repeat with the next concept until the full goal is complete.
+5) Review mistakes and create a short checklist.
+6) Repeat with the next concept until complete.
 
 If you share your exact goal, I can turn this into a custom roadmap.`;
 };
@@ -274,8 +335,8 @@ const isAffirmativeFollowUp = (text) => {
     return normalized === "yes" ||
         normalized === "yes do that" ||
         normalized === "yes please" ||
-        normalized === "do it" ||
         normalized === "do that" ||
+        normalized === "do it" ||
         normalized === "sure" ||
         normalized === "ok" ||
         normalized === "okay" ||
@@ -341,6 +402,13 @@ const lastAssistantAskedForPlanConfirmation = (history) => {
     if(!previousAssistant) return false;
     const message = previousAssistant.content.toLowerCase();
     return message.includes("7-day plan") || message.includes("7 day plan");
+};
+
+const isAppBuildRequest = (text) => {
+    const normalized = (text || "").toLowerCase();
+    const hasBuildVerb = normalized.includes("make") || normalized.includes("build") || normalized.includes("create") || normalized.includes("develop") || normalized.includes("write");
+    const hasAppNoun = normalized.includes("app") || normalized.includes("todo") || normalized.includes("task") || normalized.includes("website") || normalized.includes("site") || normalized.includes("page") || normalized.includes("project") || normalized.includes("dashboard") || normalized.includes("calculator") || normalized.includes("game");
+    return hasBuildVerb && hasAppNoun;
 };
 
 const getGeneralHelpfulReply = () => {
@@ -482,6 +550,14 @@ If you want, I can also give you a 7-day JavaScript learning plan.`;
     }
 
     if(
+        lowered.includes("todoapp") ||
+        (lowered.includes("todo") && (lowered.includes("app") || lowered.includes("list") || lowered.includes("task"))) ||
+        isAppBuildRequest(lowered)
+    ) {
+        return getTodoAppReply();
+    }
+
+    if(
         lowered.includes("learn") ||
         lowered.includes("learning") ||
         lowered.includes("study") ||
@@ -526,7 +602,7 @@ console.log(counter()); // 2
 console.log(counter()); // 3
 \`\`\`
 
-    Why it works: the returned function closes over the variable "count", so it keeps state between calls.`;
+Why it works: the returned function closes over the variable \`count\`, so it keeps state between calls.`;
     }
 
     if(lowered.includes("code") || lowered.includes("write") || lowered.includes("program") || lowered.includes("javascript") || lowered.includes("python") || lowered.includes("java") || lowered.includes("example")) {
