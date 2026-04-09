@@ -142,6 +142,140 @@ console.log(counter()); // 3
 Why it works: the returned function closes over the variable \`count\`, so it keeps state between calls.`;
 };
 
+const getLearningTipsReply = () => {
+    return `Here are practical tips to learn anything faster:
+
+1) Learn in short focused blocks (30-45 min), then take a 5-10 min break.
+2) Use active recall: close notes and explain the concept from memory.
+3) Practice immediately after learning (small exercises/projects).
+4) Use spaced repetition: review after 1 day, 3 days, 7 days, then 14 days.
+5) Teach what you learned in simple words (great for clarity).
+6) Track weak spots and spend 70% of time fixing them.
+7) Keep a daily streak, even if it is only 20 minutes.
+
+If you want, I can create a custom 7-day plan for your exact topic.`;
+};
+
+const getSevenDayLearningPlanReply = (topic = "your topic") => {
+    return `Perfect. Here is a practical 7-day learning plan for ${topic}:
+
+Day 1: Define your goal and baseline
+1) Write one clear goal.
+2) List what you already know and what is confusing.
+3) Study 45 minutes, then write a short summary from memory.
+
+Day 2: Core concepts only
+1) Learn the top 2-3 core concepts.
+2) Solve 3 small practice tasks.
+3) End with a short self-quiz without notes.
+
+Day 3: Guided practice
+1) Build a tiny guided project/tutorial.
+2) Pause after each step and predict the next step.
+3) Write down 3 mistakes and fixes.
+
+Day 4: Build from scratch
+1) Rebuild a mini project without copying.
+2) Debug for 15 minutes before checking help.
+3) Note all gaps to review later.
+
+Day 5: Strengthen weak areas
+1) Spend 70% of time on weak topics.
+2) Do spaced revision of previous notes.
+3) Teach one concept out loud.
+
+Day 6: Real challenge day
+1) Solve 1 medium-level problem/project task.
+2) Time-box it to 60-90 minutes.
+3) Review solution quality and list improvements.
+
+Day 7: Review and next-step roadmap
+1) Re-test yourself on key concepts.
+2) Summarize what improved this week.
+3) Set your next 7-day plan with a harder goal.
+
+Daily rule: 45-90 minutes focused work, no multitasking, and a short written recap.`;
+};
+
+const getStepByStepPlanReply = (topic = "this topic") => {
+    return `Great. Here is a step-by-step way to approach ${topic}:
+
+1) Define the end result in one clear sentence.
+2) List the 3 core concepts you must understand first.
+3) Study one concept, then do one short practice task immediately.
+4) Build a tiny example or mini-project.
+5) Review mistakes and create a short checklist.
+6) Repeat with the next concept until complete.
+
+If you share your exact goal, I can turn this into a custom roadmap.`;
+};
+
+const isAffirmativeFollowUp = (text) => {
+    const normalized = (text || "").trim().toLowerCase();
+    return normalized === "yes" ||
+        normalized === "yes do that" ||
+        normalized === "yes please" ||
+        normalized === "do that" ||
+        normalized === "do it" ||
+        normalized === "sure" ||
+        normalized === "ok" ||
+        normalized === "okay" ||
+        normalized === "go ahead" ||
+        normalized === "please do";
+};
+
+const isContinuationFollowUp = (text) => {
+    const normalized = (text || "").trim().toLowerCase();
+    return normalized === "more" ||
+        normalized === "continue" ||
+        normalized === "next" ||
+        normalized === "go on" ||
+        normalized === "elaborate" ||
+        normalized === "explain more";
+};
+
+const getLastAssistantMessage = (history) => {
+    if(!Array.isArray(history) || history.length === 0) return "";
+    const previousAssistant = [...history].reverse().find((entry) => entry?.role === "assistant" && typeof entry?.content === "string");
+    return previousAssistant?.content || "";
+};
+
+const getLastUserTopic = (history) => {
+    if(!Array.isArray(history) || history.length === 0) return "your topic";
+
+    const candidates = [...history]
+        .reverse()
+        .filter((entry) => entry?.role === "user" && typeof entry?.content === "string")
+        .map((entry) => entry.content.trim())
+        .filter(Boolean)
+        .filter((entry) => !isAffirmativeFollowUp(entry) && !isContinuationFollowUp(entry));
+
+    if(candidates.length === 0) return "your topic";
+    const topic = candidates[0].replace(/[?.!]+$/g, "");
+    return topic.length > 80 ? `${topic.slice(0, 80)}...` : topic;
+};
+
+const getOfferDrivenFollowUpReply = (history) => {
+    const lastAssistant = getLastAssistantMessage(history).toLowerCase();
+    const topic = getLastUserTopic(history);
+
+    if(lastAssistant.includes("7-day plan") || lastAssistant.includes("7 day plan")) {
+        return getSevenDayLearningPlanReply(topic);
+    }
+
+    if(lastAssistant.includes("step-by-step") || lastAssistant.includes("step by step")) {
+        return getStepByStepPlanReply(topic);
+    }
+
+    if(lastAssistant.includes("code") || lastAssistant.includes("example") || lastAssistant.includes("algorithm")) {
+        return `Great. I can continue with that.
+
+For ${topic}, tell me your preferred language (JavaScript, Python, or Java), and I will provide a complete runnable solution plus explanation.`;
+    }
+
+    return getStepByStepPlanReply(topic);
+};
+
 const getContextualMessage = (input, history) => {
     if(!Array.isArray(history) || history.length === 0) {
         return input;
@@ -161,6 +295,10 @@ const getContextualMessage = (input, history) => {
         return input;
     }
 
+    if(isAffirmativeFollowUp(input) || isContinuationFollowUp(input)) {
+        return input;
+    }
+
     return `${previousUser.content.trim()} ${input}`.trim();
 };
 
@@ -173,6 +311,10 @@ const getOfflineAssistantReply = (message, history = []) => {
 
         if(!input) {
                 return "Please share your question, and I will help right away.";
+        }
+
+        if(isAffirmativeFollowUp(rawLowered) || isContinuationFollowUp(rawLowered)) {
+            return getOfferDrivenFollowUpReply(history);
         }
 
         if(rawLowered === "how are you" || rawLowered.includes("how are you")) {
@@ -253,6 +395,18 @@ How it works:
 If you want, I can also give you a 7-day JavaScript learning plan.`;
     }
 
+    if(
+        lowered.includes("learn") ||
+        lowered.includes("learning") ||
+        lowered.includes("study") ||
+        lowered.includes("studying") ||
+        lowered.includes("focus") ||
+        lowered.includes("productivity") ||
+        lowered.includes("tips")
+    ) {
+        return getLearningTipsReply();
+    }
+
     if(lowered.includes("merge sort") || lowered.includes("mergesort")) {
         if(lowered.includes("java")) return getMergeSortReply("java");
         if(lowered.includes("python")) return getMergeSortReply("python");
@@ -275,7 +429,14 @@ Please share the exact problem statement, and I will return complete runnable co
 I can break it down simply, add examples, and show code if needed.`;
     }
 
-        return `Here is a direct response to your query: "${input}".\n\nI can help with explanations, summaries, coding, debugging, and step-by-step guidance. If you want a deeper or more specific answer, ask a follow-up and I will refine it.`;
+        return `I can help with that. Here is a quick way to move forward:
+
+    1) Define your exact goal in one sentence.
+    2) Break it into 2-3 smaller steps.
+    3) Start with the smallest step now and time-box it for 25 minutes.
+    4) Share your result here and I will help refine the next step.
+
+    If you want, tell me your goal and I will give you a tailored action plan.`;
 };
 
 const getOpenAIAPIResponse = async(message, history = []) => {

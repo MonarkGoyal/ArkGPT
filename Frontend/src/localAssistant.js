@@ -215,8 +215,8 @@ const getLearningTipsReply = () => {
 If you want, I can create a custom 7-day plan for your exact topic.`;
 };
 
-const getSevenDayLearningPlanReply = () => {
-    return `Perfect. Here is a practical 7-day learning plan you can start today:
+const getSevenDayLearningPlanReply = (topic = "your topic") => {
+    return `Perfect. Here is a practical 7-day learning plan for ${topic}:
 
 Day 1: Define your goal and baseline
 1) Write one clear goal (example: "Learn React basics to build a to-do app").
@@ -256,16 +256,83 @@ Day 7: Review and next-step roadmap
 Daily rule: 45-90 minutes focused work, no multitasking, and a short written recap after each session.`;
 };
 
+const getStepByStepPlanReply = (topic = "this topic") => {
+    return `Great. Here is a step-by-step way to approach ${topic}:
+
+1) Define the end result in one clear sentence.
+2) List the 3 core concepts you must understand first.
+3) Study one concept, then do one short practice task immediately.
+4) Build a tiny example or mini-project.
+5) Review mistakes and create a short checklist to avoid repeating them.
+6) Repeat with the next concept until the full goal is complete.
+
+If you share your exact goal, I can turn this into a custom roadmap.`;
+};
+
 const isAffirmativeFollowUp = (text) => {
     const normalized = (text || "").trim().toLowerCase();
     return normalized === "yes" ||
         normalized === "yes do that" ||
+        normalized === "yes please" ||
+        normalized === "do it" ||
         normalized === "do that" ||
         normalized === "sure" ||
         normalized === "ok" ||
         normalized === "okay" ||
         normalized === "go ahead" ||
         normalized === "please do";
+};
+
+const isContinuationFollowUp = (text) => {
+    const normalized = (text || "").trim().toLowerCase();
+    return normalized === "more" ||
+        normalized === "continue" ||
+        normalized === "next" ||
+        normalized === "go on" ||
+        normalized === "elaborate" ||
+        normalized === "explain more";
+};
+
+const getLastAssistantMessage = (history) => {
+    if(!Array.isArray(history) || history.length === 0) return "";
+    const previousAssistant = [...history].reverse().find((entry) => entry?.role === "assistant" && typeof entry?.content === "string");
+    return previousAssistant?.content || "";
+};
+
+const getLastUserTopic = (history) => {
+    if(!Array.isArray(history) || history.length === 0) return "your topic";
+
+    const candidates = [...history]
+        .reverse()
+        .filter((entry) => entry?.role === "user" && typeof entry?.content === "string")
+        .map((entry) => entry.content.trim())
+        .filter(Boolean)
+        .filter((entry) => !isAffirmativeFollowUp(entry) && !isContinuationFollowUp(entry));
+
+    if(candidates.length === 0) return "your topic";
+    const topic = candidates[0].replace(/[?.!]+$/g, "");
+    return topic.length > 80 ? `${topic.slice(0, 80)}...` : topic;
+};
+
+const getOfferDrivenFollowUpReply = (history) => {
+    const lastAssistant = getLastAssistantMessage(history).toLowerCase();
+    const topic = getLastUserTopic(history);
+
+    if(lastAssistant.includes("7-day plan") || lastAssistant.includes("7 day plan")) {
+        return getSevenDayLearningPlanReply(topic);
+    }
+
+    if(lastAssistant.includes("step-by-step") || lastAssistant.includes("step by step")) {
+        return getStepByStepPlanReply(topic);
+    }
+
+    if(lastAssistant.includes("code") || lastAssistant.includes("example") || lastAssistant.includes("algorithm")) {
+        return `Great. I can continue with that.
+
+For ${topic}, tell me your preferred language (JavaScript, Python, or Java), and I will provide a complete runnable solution plus explanation.`;
+    }
+
+    return getStepByStepPlanReply(topic);
 };
 
 const lastAssistantAskedForPlanConfirmation = (history) => {
@@ -306,6 +373,10 @@ const getContextualMessage = (input, history) => {
         return input;
     }
 
+    if(isAffirmativeFollowUp(input) || isContinuationFollowUp(input)) {
+        return input;
+    }
+
     return `${previousUserMessage.content.trim()} ${input}`.trim();
 };
 
@@ -320,8 +391,16 @@ const getLocalAssistantReply = (message, history = []) => {
         return "Please share your question, and I will help right away.";
     }
 
-    if(isAffirmativeFollowUp(rawLowered) && lastAssistantAskedForPlanConfirmation(history)) {
-        return getSevenDayLearningPlanReply();
+    if(isAffirmativeFollowUp(rawLowered)) {
+        if(lastAssistantAskedForPlanConfirmation(history)) {
+            const topic = getLastUserTopic(history);
+            return getSevenDayLearningPlanReply(topic);
+        }
+        return getOfferDrivenFollowUpReply(history);
+    }
+
+    if(isContinuationFollowUp(rawLowered)) {
+        return getOfferDrivenFollowUpReply(history);
     }
 
     if(rawLowered === "how are you" || rawLowered.includes("how are you")) {
