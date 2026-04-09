@@ -116,6 +116,91 @@ Time complexity: O(n log n)
 Space complexity: O(n)`;
 };
 
+const getBubbleSortReply = (language) => {
+    if(language === "python") {
+        return `Sure. Here is bubble sort in Python:
+
+\`\`\`python
+def bubble_sort(arr):
+    n = len(arr)
+    for i in range(n):
+        swapped = False
+        for j in range(0, n - i - 1):
+            if arr[j] > arr[j + 1]:
+                arr[j], arr[j + 1] = arr[j + 1], arr[j]
+                swapped = True
+        if not swapped:
+            break
+    return arr
+
+nums = [64, 34, 25, 12, 22, 11, 90]
+print(bubble_sort(nums))
+\`\`\`
+
+Time complexity: O(n^2)
+Space complexity: O(1)`;
+    }
+
+    if(language === "java") {
+        return `Sure. Here is bubble sort in Java:
+
+\`\`\`java
+import java.util.Arrays;
+
+public class BubbleSort {
+    public static void bubbleSort(int[] arr) {
+        int n = arr.length;
+        for (int i = 0; i < n - 1; i++) {
+            boolean swapped = false;
+            for (int j = 0; j < n - i - 1; j++) {
+                if (arr[j] > arr[j + 1]) {
+                    int temp = arr[j];
+                    arr[j] = arr[j + 1];
+                    arr[j + 1] = temp;
+                    swapped = true;
+                }
+            }
+            if (!swapped) break;
+        }
+    }
+
+    public static void main(String[] args) {
+        int[] nums = {64, 34, 25, 12, 22, 11, 90};
+        bubbleSort(nums);
+        System.out.println(Arrays.toString(nums));
+    }
+}
+\`\`\`
+
+Time complexity: O(n^2)
+Space complexity: O(1)`;
+    }
+
+    return `Sure. Here is bubble sort in JavaScript:
+
+\`\`\`js
+function bubbleSort(arr) {
+  const n = arr.length;
+  for (let i = 0; i < n - 1; i++) {
+    let swapped = false;
+    for (let j = 0; j < n - i - 1; j++) {
+      if (arr[j] > arr[j + 1]) {
+        [arr[j], arr[j + 1]] = [arr[j + 1], arr[j]];
+        swapped = true;
+      }
+    }
+    if (!swapped) break;
+  }
+  return arr;
+}
+
+console.log(bubbleSort([64, 34, 25, 12, 22, 11, 90]));
+\`\`\`
+
+Time complexity: O(n^2)
+Space complexity: O(1)`;
+};
+
 const getContextualMessage = (input, history) => {
     if(!Array.isArray(history) || history.length === 0) {
         return input;
@@ -233,6 +318,12 @@ If you want, I can also give you a 7-day JavaScript learning plan.`;
         return getMergeSortReply("javascript");
     }
 
+    if(lowered.includes("bubble sort") || lowered.includes("bubblesort") || (lowered.includes("sort") && lowered.includes("bubble"))) {
+        if(lowered.includes("java")) return getBubbleSortReply("java");
+        if(lowered.includes("python")) return getBubbleSortReply("python");
+        return getBubbleSortReply("javascript");
+    }
+
     if(lowered.includes("closure") || lowered.includes("closures")) {
         return `A closure in JavaScript is when a function remembers variables from its outer scope even after the outer function has finished.
 
@@ -257,10 +348,18 @@ console.log(counter()); // 3
     Why it works: the returned function closes over the variable "count", so it keeps state between calls.`;
     }
 
-    if(lowered.includes("code") || lowered.includes("write") || lowered.includes("program") || lowered.includes("javascript") || lowered.includes("python") || lowered.includes("java")) {
-        return `Sure. I can help with this.
+    if(lowered.includes("code") || lowered.includes("write") || lowered.includes("program") || lowered.includes("javascript") || lowered.includes("python") || lowered.includes("java") || lowered.includes("example")) {
+        return `Sure. Here is a simple code example you can use as a starting point:
 
-Please share the exact problem statement, and I will return complete runnable code with explanation.`;
+\`\`\`js
+function greet(name) {
+  return "Hello, " + name + "!";
+}
+
+console.log(greet("World"));
+\`\`\`
+
+If you want a specific algorithm, share the name of the problem and I will give that exact code.`;
     }
 
     if(lowered.includes("explain") || lowered.includes("what is") || lowered.startsWith("what ") || lowered.startsWith("how ")) {
