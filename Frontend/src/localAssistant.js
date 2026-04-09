@@ -201,6 +201,31 @@ Time complexity: O(n^2)
 Space complexity: O(1)`;
 };
 
+const getLearningTipsReply = () => {
+    return `Here are practical tips to learn anything faster:
+
+1) Learn in short focused blocks (30-45 min), then take a 5-10 min break.
+2) Use active recall: close notes and explain the concept from memory.
+3) Practice immediately after learning (small exercises/projects).
+4) Use spaced repetition: review after 1 day, 3 days, 7 days, then 14 days.
+5) Teach what you learned in simple words (great for clarity).
+6) Track weak spots and spend 70% of time fixing them.
+7) Keep a daily streak, even if it is only 20 minutes.
+
+If you want, I can create a custom 7-day plan for your exact topic.`;
+};
+
+const getGeneralHelpfulReply = () => {
+    return `I can help with that. Here is a quick way to move forward:
+
+1) Define your exact goal in one sentence.
+2) Break it into 2-3 smaller steps.
+3) Start with the smallest step now and time-box it for 25 minutes.
+4) Share your result here and I will help refine the next step.
+
+If you want, tell me your goal and I will give you a tailored action plan.`;
+};
+
 const getContextualMessage = (input, history) => {
     if(!Array.isArray(history) || history.length === 0) {
         return input;
@@ -312,6 +337,18 @@ How it works:
 If you want, I can also give you a 7-day JavaScript learning plan.`;
     }
 
+    if(
+        lowered.includes("learn") ||
+        lowered.includes("learning") ||
+        lowered.includes("study") ||
+        lowered.includes("studying") ||
+        lowered.includes("focus") ||
+        lowered.includes("productivity") ||
+        lowered.includes("tips")
+    ) {
+        return getLearningTipsReply();
+    }
+
     if(lowered.includes("merge sort") || lowered.includes("mergesort")) {
         if(lowered.includes("java")) return getMergeSortReply("java");
         if(lowered.includes("python")) return getMergeSortReply("python");
@@ -368,9 +405,7 @@ If you want a specific algorithm, share the name of the problem and I will give 
 I can break it down simply, add examples, and show code if needed.`;
     }
 
-    return `Here is a direct response to your query: "${input}".
-
-I can help with explanations, summaries, coding, debugging, and step-by-step guidance. If you want a deeper or more specific answer, ask a follow-up and I will refine it.`;
+    return getGeneralHelpfulReply();
 };
 
 export default getLocalAssistantReply;
