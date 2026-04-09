@@ -202,12 +202,320 @@ export default function App() {
 This is a complete starter app, so you can paste it into App.jsx and run it.`;
 };
 
+const getExerciseReply = (topic) => {
+    return `For ${topic}, keep the work gentle and pain-free. Here are a few general movements that often help with pelvic/hip stability:
+
+1) Pelvic tilts - 10 slow reps.
+2) Glute bridges - 2 sets of 10.
+3) Clamshells - 2 sets of 12 each side.
+4) Bird-dog - 2 sets of 8 each side.
+5) Hip flexor stretch - 20 to 30 seconds each side.
+
+Move slowly and stop if pain increases. If this is due to injury, persistent pain, or a diagnosed condition, it is best to check with a physical therapist or doctor first.
+
+If you want, I can turn this into a 5-minute, 10-minute, or 15-minute routine.`;
+};
+
+const getGeneralContextReply = (input) => {
+    return `For ${input}, the most useful next step is to be more specific about the goal, format, or outcome.
+
+I can help with code, study notes, plans, explanations, or step-by-step guidance. If you tell me the exact result you want, I will answer directly.`;
+};
+
+const getBasicMathLessonReply = () => {
+    return `Here is a very basic math guide:
+
+1) Addition means combining numbers. Example: 2 + 2 = 4.
+2) Subtraction means taking away. Example: 5 - 3 = 2.
+3) Multiplication means repeated addition. Example: 3 x 4 = 12.
+4) Division means splitting into equal parts. Example: 12 / 3 = 4.
+5) Order matters in mixed operations. Use parentheses first, then multiplication/division, then addition/subtraction.
+
+Example:
+2 + 3 x 4 = 2 + 12 = 14
+
+If you want, I can also teach fractions, percentages, or basic algebra.`;
+};
+
+const stripMathQuestionPrefix = (input) => {
+    return (input || "")
+        .trim()
+        .toLowerCase()
+        .replace(/^(what is|what's|whats|calculate|solve|evaluate|compute|find|simplify|what is the value of)\s+/i, "")
+        .replace(/[?=]+$/g, "")
+        .trim();
+};
+
+const isMathLessonRequest = (input) => {
+    const normalized = (input || "").toLowerCase();
+    return normalized.includes("basic math") ||
+        normalized.includes("basic maths") ||
+        normalized.includes("math lesson") ||
+        normalized.includes("teach me math") ||
+        normalized.includes("teach me maths") ||
+        normalized.includes("learn math") ||
+        normalized.includes("learn maths") ||
+        normalized.includes("maths");
+};
+
+const isMathExpressionCandidate = (input) => {
+    const normalized = stripMathQuestionPrefix(input).replace(/,/g, "");
+    return /^[0-9+\-*/().\s]+$/.test(normalized) && /[0-9]/.test(normalized);
+};
+
+const evaluateMathExpression = (input) => {
+    const expression = stripMathQuestionPrefix(input).replace(/,/g, "");
+    if(!/^[0-9+\-*/().\s]+$/.test(expression) || !/[0-9]/.test(expression)) {
+        return null;
+    }
+
+    let index = 0;
+
+    const skipSpaces = () => {
+        while(index < expression.length && /\s/.test(expression[index])) index += 1;
+    };
+
+    const parseNumber = () => {
+        skipSpaces();
+        let start = index;
+        let seenDigit = false;
+        while(index < expression.length && /[0-9.]/.test(expression[index])) {
+            if(/[0-9]/.test(expression[index])) seenDigit = true;
+            index += 1;
+        }
+        if(start === index || !seenDigit) return null;
+        return Number(expression.slice(start, index));
+    };
+
+    const parseFactor = () => {
+        skipSpaces();
+        if(expression[index] === "+") {
+            index += 1;
+            return parseFactor();
+        }
+        if(expression[index] === "-") {
+            index += 1;
+            const value = parseFactor();
+            return value === null ? null : -value;
+        }
+        if(expression[index] === "(") {
+            index += 1;
+            const value = parseExpression();
+            skipSpaces();
+            if(expression[index] !== ")") return null;
+            index += 1;
+            return value;
+        }
+        return parseNumber();
+    };
+
+    const parseTerm = () => {
+        let value = parseFactor();
+        if(value === null) return null;
+
+        while(true) {
+            skipSpaces();
+            const operator = expression[index];
+            if(operator !== "*" && operator !== "/") break;
+            index += 1;
+            const nextValue = parseFactor();
+            if(nextValue === null) return null;
+            value = operator === "*" ? value * nextValue : value / nextValue;
+        }
+
+        return value;
+    };
+
+    function parseExpression() {
+        let value = parseTerm();
+        if(value === null) return null;
+
+        while(true) {
+            skipSpaces();
+            const operator = expression[index];
+            if(operator !== "+" && operator !== "-") break;
+            index += 1;
+            const nextValue = parseTerm();
+            if(nextValue === null) return null;
+            value = operator === "+" ? value + nextValue : value - nextValue;
+        }
+
+        return value;
+    }
+
+    const result = parseExpression();
+    skipSpaces();
+
+    if(result === null || index !== expression.length || Number.isNaN(result) || !Number.isFinite(result)) {
+        return null;
+    }
+
+    return result;
+};
+
+const getMathReply = (input) => {
+    const result = evaluateMathExpression(input);
+    if(result !== null) {
+        const simplified = stripMathQuestionPrefix(input);
+        return `\`${simplified}\` = ${Number.isInteger(result) ? result : Number(result.toFixed(6))}`;
+    }
+
+    return `Here is a simple math explanation for "${input}":
+
+1) Break the problem into smaller parts.
+2) Do the arithmetic step by step.
+3) Check the order of operations.
+
+If you send me the exact expression, I can solve it directly.`;
+};
+
+const isPercentagePrompt = (input) => {
+    const normalized = (input || "").toLowerCase();
+    return normalized.includes("percent") || normalized.includes("percentage") || normalized.includes("%");
+};
+
+const isFractionPrompt = (input) => {
+    const normalized = (input || "").toLowerCase();
+    return normalized.includes("fraction") || normalized.includes("fractions") || normalized.includes("numerator") || normalized.includes("denominator");
+};
+
+const isAlgebraPrompt = (input) => {
+    const normalized = (input || "").toLowerCase();
+    return normalized.includes("algebra") || /[a-z]\s*[+-]\s*\d+\s*=/.test(normalized) || /\d+\s*[a-z]\s*[+-]\s*\d+\s*=/.test(normalized) || /solve\s+.*[a-z]/.test(normalized);
+};
+
+const isWordProblemPrompt = (input) => {
+    const normalized = (input || "").toLowerCase();
+    return normalized.includes("word problem") || normalized.includes("word problems") || normalized.includes("story problem") || normalized.includes("real life problem");
+};
+
+const getPercentageReply = (input) => {
+    const normalized = (input || "").toLowerCase().replace(/,/g, "");
+    const match = normalized.match(/(\d+(?:\.\d+)?)\s*%\s*(?:of\s*)?(\d+(?:\.\d+)?)/) || normalized.match(/(\d+(?:\.\d+)?)\s*percent\s+of\s+(\d+(?:\.\d+)?)/);
+
+    if(match) {
+        const percent = Number(match[1]);
+        const number = Number(match[2]);
+        const result = (percent / 100) * number;
+        return `\`${percent}% of ${number}\` = ${Number.isInteger(result) ? result : Number(result.toFixed(6))}`;
+    }
+
+    return `Percent means "out of 100". A few basics:
+
+1) 50% = 1/2
+2) 25% = 1/4
+3) 10% = 1/10
+4) To find a percent of a number, multiply by the percent as a decimal.
+
+Example: 20% of 50 = 0.2 x 50 = 10
+
+If you send me a specific percentage question, I can calculate it directly.`;
+};
+
+const getFractionReply = () => {
+    return `Fractions are parts of a whole.
+
+1) The top number is the numerator.
+2) The bottom number is the denominator.
+3) To add fractions, first use the same denominator.
+4) To multiply fractions, multiply top numbers and bottom numbers.
+
+Examples:
+1/2 + 1/4 = 2/4 + 1/4 = 3/4
+2/3 x 3/5 = 6/15 = 2/5
+
+If you want, I can solve a specific fraction problem for you.`;
+};
+
+const getAlgebraReply = (input) => {
+    const normalized = stripMathQuestionPrefix(input).replace(/\s+/g, "");
+    const match = normalized.match(/^([+-]?\d*\.?\d*)?([a-z])([+-])(\d*\.?\d+)=([+-]?\d*\.?\d+)$/i) || normalized.match(/^([a-z])([+-])(\d*\.?\d+)=([+-]?\d*\.?\d+)$/i);
+
+    if(match) {
+        if(match.length === 6) {
+            const coefficient = Number(match[1] === "" || match[1] == null ? 1 : match[1]);
+            const variable = match[2];
+            const operator = match[3];
+            const offset = Number(match[4]);
+            const rightSide = Number(match[5]);
+            const variableValue = operator === "+" ? (rightSide - offset) / coefficient : (rightSide + offset) / coefficient;
+            return `Solve for ${variable}: ${normalized.replace(/=/, " = ")}.
+
+${coefficient}${variable} ${operator} ${offset} = ${rightSide}
+${coefficient}${variable} = ${operator === "+" ? rightSide - offset : rightSide + offset}
+${variable} = ${Number.isInteger(variableValue) ? variableValue : Number(variableValue.toFixed(6))}`;
+        }
+
+        const variable = match[1];
+        const operator = match[2];
+        const offset = Number(match[3]);
+        const rightSide = Number(match[4]);
+        const variableValue = operator === "+" ? rightSide - offset : rightSide + offset;
+        return `Solve for ${variable}:
+
+${variable} ${operator} ${offset} = ${rightSide}
+${variable} = ${Number.isInteger(variableValue) ? variableValue : Number(variableValue.toFixed(6))}`;
+    }
+
+    return `Algebra is about finding unknowns.
+
+Quick rule:
+1) Move numbers to the other side.
+2) Do the opposite operation.
+3) Keep the equation balanced.
+
+Example:
+x + 3 = 7
+x = 7 - 3
+x = 4
+
+Send me a specific equation and I will solve it directly.`;
+};
+
+const getWordProblemReply = (input) => {
+    return `For a word problem like "${input}", do this:
+
+1) Identify the numbers.
+2) Decide what each number represents.
+3) Translate the sentence into an equation.
+4) Solve the equation.
+5) Check the answer makes sense.
+
+Example:
+"I have 3 apples and get 2 more" becomes 3 + 2 = 5.
+
+If you want, send the exact word problem and I will turn it into math for you.`;
+};
+
 const isAppBuildRequest = (text) => {
         const normalized = (text || "").toLowerCase();
         const hasBuildVerb = normalized.includes("make") || normalized.includes("build") || normalized.includes("create") || normalized.includes("develop") || normalized.includes("write");
         const hasAppNoun = normalized.includes("app") || normalized.includes("todo") || normalized.includes("task") || normalized.includes("website") || normalized.includes("site") || normalized.includes("page") || normalized.includes("project") || normalized.includes("dashboard") || normalized.includes("calculator") || normalized.includes("game");
         return hasBuildVerb && hasAppNoun;
 };
+
+const isExerciseRequest = (text) => {
+    const normalized = (text || "").toLowerCase();
+    return normalized.includes("exercise") ||
+        normalized.includes("exercises") ||
+        normalized.includes("workout") ||
+        normalized.includes("stretch") ||
+        normalized.includes("pain") ||
+        normalized.includes("pelvis") ||
+        normalized.includes("hip") ||
+        normalized.includes("back") ||
+        normalized.includes("posture");
+};
+
+    const isMathPrompt = (input) => {
+        return isMathLessonRequest(input) ||
+        isMathExpressionCandidate(input) ||
+        isPercentagePrompt(input) ||
+        isFractionPrompt(input) ||
+        isAlgebraPrompt(input) ||
+        isWordProblemPrompt(input) ||
+        /^(what is|what's|whats|calculate|solve|evaluate|compute|find|simplify)\b/i.test((input || "").trim().toLowerCase());
+    };
 
 const getLearningTipsReply = () => {
     return `Here are practical tips to learn anything faster:
@@ -362,7 +670,7 @@ const getContextualMessage = (input, history) => {
         return input;
     }
 
-    if(isAffirmativeFollowUp(input) || isContinuationFollowUp(input)) {
+    if(isAffirmativeFollowUp(input) || isContinuationFollowUp(input) || isMathPrompt(input)) {
         return input;
     }
 
@@ -382,6 +690,29 @@ const getOfflineAssistantReply = (message, history = []) => {
 
         if(isAffirmativeFollowUp(rawLowered) || isContinuationFollowUp(rawLowered)) {
             return getOfferDrivenFollowUpReply(history);
+        }
+        if(isMathLessonRequest(rawLowered)) {
+            return getBasicMathLessonReply();
+        }
+
+        if(isPercentagePrompt(rawLowered)) {
+            return getPercentageReply(rawLowered);
+        }
+
+        if(isFractionPrompt(rawLowered)) {
+            return getFractionReply();
+        }
+
+        if(isAlgebraPrompt(rawLowered)) {
+            return getAlgebraReply(rawLowered);
+        }
+
+        if(isWordProblemPrompt(rawLowered)) {
+            return getWordProblemReply(contextualInput || input);
+        }
+
+        if(isMathPrompt(rawLowered)) {
+            return getMathReply(rawLowered);
         }
 
         if(rawLowered === "how are you" || rawLowered.includes("how are you")) {
@@ -470,6 +801,10 @@ If you want, I can also give you a 7-day JavaScript learning plan.`;
         return getTodoAppReply();
     }
 
+    if(isExerciseRequest(lowered)) {
+        return getExerciseReply(contextualInput || input);
+    }
+
     if(
         lowered.includes("learn") ||
         lowered.includes("learning") ||
@@ -504,14 +839,7 @@ Please share the exact problem statement, and I will return complete runnable co
 I can break it down simply, add examples, and show code if needed.`;
     }
 
-        return `I can help with that. Here is a quick way to move forward:
-
-    1) Define your exact goal in one sentence.
-    2) Break it into 2-3 smaller steps.
-    3) Start with the smallest step now and time-box it for 25 minutes.
-    4) Share your result here and I will help refine the next step.
-
-    If you want, tell me your goal and I will give you a tailored action plan.`;
+        return getGeneralContextReply(contextualInput || input);
 };
 
 const getOpenAIAPIResponse = async(message, history = []) => {
