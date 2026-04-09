@@ -254,7 +254,7 @@ console.log(counter()); // 2
 console.log(counter()); // 3
 \`\`\`
 
-             Why it works: the returned function closes over the variable "count", so it keeps state between calls.`;
+    Why it works: the returned function closes over the variable "count", so it keeps state between calls.`;
     }
 
     if(lowered.includes("code") || lowered.includes("write") || lowered.includes("program") || lowered.includes("javascript") || lowered.includes("python") || lowered.includes("java")) {

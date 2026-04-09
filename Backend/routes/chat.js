@@ -1,11 +1,13 @@
 import express from "express";
 import mongoose from "mongoose";
 import Thread from "../models/Thread.js";
+import Feedback from "../models/Feedback.js";
 import getOpenAIAPIResponse from "../utils/openai.js";
 
 const router = express.Router();
 const hasDbConnection = () => mongoose.connection.readyState === 1;
 const inMemoryThreads = new Map();
+const inMemoryFeedback = [];
 const MAX_THREAD_MESSAGES = 100;
 const MODEL_CONTEXT_WINDOW = 12;
 
@@ -22,6 +24,14 @@ const getModelContext = (messages) => {
         .slice(-MODEL_CONTEXT_WINDOW)
         .map(({ role, content }) => ({ role, content }));
 };
+
+const buildFeedbackItem = ({ name, message, threadId, pageUrl }) => ({
+    name: name?.trim() || "Anonymous",
+    message: message.trim(),
+    threadId: threadId?.trim() || null,
+    pageUrl: pageUrl?.trim() || null,
+    createdAt: new Date(),
+});
 
 //test
 router.post("/test", async(req, res) => {
@@ -164,6 +174,46 @@ router.post("/chat", async(req, res) => {
         console.log(err);
         const message = err?.message || "Unknown backend error";
         return res.status(500).json({error: `Backend chat failure: ${message}`});
+    }
+});
+
+router.post("/feedback", async(req, res) => {
+    const { name, message, threadId, pageUrl } = req.body;
+    const trimmedMessage = message?.trim();
+
+    if(!trimmedMessage) {
+        return res.status(400).json({error: "message is required"});
+    }
+
+    try {
+        const usingDb = hasDbConnection();
+        const feedbackItem = buildFeedbackItem({ name, message: trimmedMessage, threadId, pageUrl });
+
+        if(usingDb) {
+            const savedFeedback = await Feedback.create(feedbackItem);
+            return res.status(201).json({ success: "Feedback saved", feedback: savedFeedback });
+        }
+
+        inMemoryFeedback.unshift(feedbackItem);
+        return res.status(201).json({ success: "Feedback saved", feedback: feedbackItem });
+    } catch(err) {
+        console.log(err);
+        const message = err?.message || "Unknown backend error";
+        return res.status(500).json({error: `Feedback failure: ${message}`});
+    }
+});
+
+router.get("/feedback", async(req, res) => {
+    if(!hasDbConnection()) {
+        return res.json(inMemoryFeedback);
+    }
+
+    try {
+        const feedback = await Feedback.find({}).sort({createdAt: -1}).limit(100);
+        return res.json(feedback);
+    } catch(err) {
+        console.log(err);
+        return res.status(500).json({error: "Failed to fetch feedback"});
     }
 });
 

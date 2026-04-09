@@ -96,3 +96,30 @@ test("POST /api/chat rejects missing fields", async () => {
     assert.equal(response.status, 400);
     assert.equal(response.body.error, "missing required fields");
 });
+
+test("POST /api/feedback saves anonymous feedback without database", async () => {
+    const app = buildApp();
+
+    const response = await request(app)
+        .post("/api/feedback")
+        .send({ message: "Great app", pageUrl: "https://example.com" });
+
+    assert.equal(response.status, 201);
+    assert.equal(response.body.success, "Feedback saved");
+    assert.equal(response.body.feedback.message, "Great app");
+    assert.equal(response.body.feedback.name, "Anonymous");
+});
+
+test("GET /api/feedback returns saved feedback entries without database", async () => {
+    const app = buildApp();
+
+    await request(app)
+        .post("/api/feedback")
+        .send({ name: "Tester", message: "Nice work" });
+
+    const response = await request(app).get("/api/feedback");
+
+    assert.equal(response.status, 200);
+    assert.equal(Array.isArray(response.body), true);
+    assert.ok(response.body.length >= 1);
+});

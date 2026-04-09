@@ -10,6 +10,11 @@ function ChatWindow() {
     const {prompt, setPrompt, setReply, currThreadId, setPrevChats, setNewChat, prevChats} = useContext(MyContext);
     const [loading, setLoading] = useState(false);
     const [isOpen, setIsOpen] = useState(false);
+    const [feedbackOpen, setFeedbackOpen] = useState(false);
+    const [feedbackName, setFeedbackName] = useState("");
+    const [feedbackMessage, setFeedbackMessage] = useState("");
+    const [feedbackStatus, setFeedbackStatus] = useState("");
+    const [feedbackLoading, setFeedbackLoading] = useState(false);
 
     const getReply = async () => {
         if(loading) return;
@@ -69,6 +74,55 @@ function ChatWindow() {
         setIsOpen(!isOpen);
     }
 
+    const openFeedback = () => {
+        setIsOpen(false);
+        setFeedbackStatus("");
+        setFeedbackOpen(true);
+    }
+
+    const closeFeedback = () => {
+        setFeedbackOpen(false);
+        setFeedbackStatus("");
+    }
+
+    const submitFeedback = async (e) => {
+        e.preventDefault();
+
+        const trimmedMessage = feedbackMessage.trim();
+        if(!trimmedMessage || feedbackLoading) return;
+
+        setFeedbackLoading(true);
+        setFeedbackStatus("");
+
+        try {
+            const response = await fetch(apiUrl("/api/feedback"), {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    name: feedbackName.trim(),
+                    message: trimmedMessage,
+                    threadId: currThreadId,
+                    pageUrl: window.location.href
+                })
+            });
+
+            const payload = await response.json().catch(() => ({}));
+            if(!response.ok) {
+                throw new Error(payload.error || `Request failed with status ${response.status}`);
+            }
+
+            setFeedbackName("");
+            setFeedbackMessage("");
+            setFeedbackStatus("Thanks for your feedback.");
+        } catch(err) {
+            setFeedbackStatus(`Could not send feedback: ${err?.message || "Unknown error"}`);
+        } finally {
+            setFeedbackLoading(false);
+        }
+    }
+
     return (
         <div className="chatWindow">
             <div className="navbar">
@@ -80,6 +134,7 @@ function ChatWindow() {
             {
                 isOpen && 
                 <div className="dropDown">
+                    <div className="dropDownItem" onClick={openFeedback}><i className="fa-solid fa-comment-dots"></i> Send feedback</div>
                     <div className="dropDownItem"><i className="fa-solid fa-gear"></i> Settings</div>
                     <div className="dropDownItem"><i className="fa-solid fa-cloud-arrow-up"></i> Upgrade plan</div>
                     <div className="dropDownItem"><i className="fa-solid fa-arrow-right-from-bracket"></i> Log out</div>
@@ -111,6 +166,37 @@ function ChatWindow() {
                     ArkGPT can make mistakes. Check important info. See Cookie Preferences.
                 </p>
             </div>
+
+            {feedbackOpen && (
+                <div className="feedbackOverlay" onClick={closeFeedback}>
+                    <form className="feedbackModal" onClick={(event) => event.stopPropagation()} onSubmit={submitFeedback}>
+                        <div className="feedbackHeader">
+                            <h3>Send feedback</h3>
+                            <button type="button" className="feedbackClose" onClick={closeFeedback}>×</button>
+                        </div>
+                        <input
+                            className="feedbackInput"
+                            placeholder="Your name (optional)"
+                            value={feedbackName}
+                            onChange={(e) => setFeedbackName(e.target.value)}
+                        />
+                        <textarea
+                            className="feedbackTextarea"
+                            placeholder="Tell us what worked well or what should improve"
+                            value={feedbackMessage}
+                            onChange={(e) => setFeedbackMessage(e.target.value)}
+                            rows={5}
+                        />
+                        <div className="feedbackActions">
+                            <button type="button" className="feedbackSecondary" onClick={closeFeedback}>Cancel</button>
+                            <button type="submit" className="feedbackPrimary" disabled={feedbackLoading}>
+                                {feedbackLoading ? "Sending..." : "Submit"}
+                            </button>
+                        </div>
+                        {feedbackStatus && <p className="feedbackStatus">{feedbackStatus}</p>}
+                    </form>
+                </div>
+            )}
         </div>
     )
 }

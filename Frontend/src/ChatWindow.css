@@ -139,6 +139,95 @@
     background-color: rgba(255, 255, 255, 0.08);
 }
 
+.feedbackOverlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(3, 6, 15, 0.72);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2000;
+    padding: 1rem;
+}
+
+.feedbackModal {
+    width: min(100%, 480px);
+    background: rgba(17, 23, 43, 0.98);
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    padding: 1rem;
+    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.35);
+    text-align: left;
+}
+
+.feedbackHeader {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 0.75rem;
+}
+
+.feedbackHeader h3 {
+    margin: 0;
+}
+
+.feedbackClose {
+    background: transparent;
+    border: none;
+    color: var(--text);
+    font-size: 1.5rem;
+    cursor: pointer;
+    line-height: 1;
+}
+
+.feedbackInput,
+.feedbackTextarea {
+    width: 100%;
+    border: 1px solid var(--border);
+    background: rgba(255, 255, 255, 0.05);
+    color: var(--text);
+    border-radius: 12px;
+    padding: 0.85rem 0.95rem;
+    margin-bottom: 0.75rem;
+    font-size: 0.95rem;
+    resize: vertical;
+}
+
+.feedbackTextarea {
+    min-height: 120px;
+}
+
+.feedbackActions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.75rem;
+}
+
+.feedbackPrimary,
+.feedbackSecondary {
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    padding: 0.7rem 1rem;
+    cursor: pointer;
+    background: transparent;
+    color: var(--text);
+}
+
+.feedbackPrimary {
+    background: linear-gradient(135deg, var(--accent), var(--accent-strong));
+    border-color: transparent;
+}
+
+.feedbackPrimary:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+}
+
+.feedbackStatus {
+    margin: 0.75rem 0 0;
+    color: var(--muted);
+}
+
 @media (max-width: 720px) {
     .navbar span,
     .userIconDiv {
