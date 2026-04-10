@@ -12,6 +12,7 @@ function App() {
   const [prevChats, setPrevChats] = useState([]); //stores all chats of curr threads
   const [newChat, setNewChat] = useState(true);
   const [allThreads, setAllThreads] = useState([]);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   const providerValues = {
     prompt, setPrompt,
@@ -25,9 +26,10 @@ function App() {
   return (
     <div className='app'>
       <MyContext.Provider value={providerValues}>
-          <Sidebar></Sidebar>
-          <ChatWindow></ChatWindow>
-        </MyContext.Provider>
+        <Sidebar isSidebarOpen={isSidebarOpen} onCloseSidebar={() => setIsSidebarOpen(false)}></Sidebar>
+        {isSidebarOpen && <button className="mobileOverlay" aria-label="Close sidebar" onClick={() => setIsSidebarOpen(false)} />}
+        <ChatWindow onToggleSidebar={() => setIsSidebarOpen((value) => !value)}></ChatWindow>
+      </MyContext.Provider>
     </div>
   )
 }

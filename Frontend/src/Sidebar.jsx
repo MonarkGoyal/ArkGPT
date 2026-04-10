@@ -6,7 +6,7 @@ import whiteLogo from "./assets/whitelogo.jpg";
 import { apiUrl } from "./config.js";
 import { deleteLocalThread, getLocalThreadMessages, getLocalThreadsSummary } from "./localHistory.js";
 
-function Sidebar() {
+function Sidebar({ isSidebarOpen, onCloseSidebar }) {
     const {allThreads, setAllThreads, currThreadId, setNewChat, setPrompt, setReply, setCurrThreadId, setPrevChats} = useContext(MyContext);
 
     const getAllThreads = useCallback(async () => {
@@ -34,6 +34,7 @@ function Sidebar() {
         setReply(null);
         setCurrThreadId(uuidv1());
         setPrevChats([]);
+        if(window.innerWidth <= 720) onCloseSidebar();
     }
 
     const changeThread = async (newThreadId) => {
@@ -47,12 +48,14 @@ function Sidebar() {
             setPrevChats(res);
             setNewChat(false);
             setReply(null);
+            if(window.innerWidth <= 720) onCloseSidebar();
         } catch(err) {
             console.log(err);
             const localMessages = getLocalThreadMessages(newThreadId);
             setPrevChats(localMessages);
             setNewChat(false);
             setReply(null);
+            if(window.innerWidth <= 720) onCloseSidebar();
         }
     }   
 
@@ -84,7 +87,7 @@ function Sidebar() {
     }
 
     return (
-        <section className="sidebar">
+        <section className={`sidebar ${isSidebarOpen ? "open" : "closed"}`}>
             <button className="newChatBtn" onClick={createNewChat}>
                 <span className="logoWrap">
                     <span className="logoIcon">

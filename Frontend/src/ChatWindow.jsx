@@ -7,7 +7,7 @@ import { apiUrl } from "./config.js";
 import getLocalAssistantReply from "./localAssistant.js";
 import { appendLocalMessages } from "./localHistory.js";
 
-function ChatWindow() {
+function ChatWindow({ onToggleSidebar }) {
     const {prompt, setPrompt, setReply, currThreadId, setPrevChats, setNewChat, prevChats} = useContext(MyContext);
     const [loading, setLoading] = useState(false);
     const [isOpen, setIsOpen] = useState(false);
@@ -137,7 +137,12 @@ function ChatWindow() {
     return (
         <div className="chatWindow">
             <div className="navbar">
-                <span>ArkGPT <i className="fa-solid fa-chevron-down"></i></span>
+                <div className="navbarTitleGroup">
+                    <button className="menuToggle" aria-label="Toggle menu" onClick={onToggleSidebar}>
+                        <i className="fa-solid fa-bars"></i>
+                    </button>
+                    <span>ArkGPT <i className="fa-solid fa-chevron-down"></i></span>
+                </div>
                 <div className="userIconDiv" onClick={handleProfileClick}>
                     <span className="userIcon"><i className="fa-solid fa-user"></i></span>
                 </div>

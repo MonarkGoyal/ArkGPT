@@ -54,7 +54,17 @@ p {
 }
 
 @media (max-width: 720px) {
+    .chats {
+        padding: 0.6rem 0.75rem 0.45rem;
+    }
+
     .userMessage {
         max-width: 92%;
+        padding: 10px 14px;
+    }
+
+    .gptDiv,
+    .userDiv {
+        font-size: 0.88rem;
     }
 }

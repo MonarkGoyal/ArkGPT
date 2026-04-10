@@ -9,6 +9,7 @@
     justify-content: space-between;
     border-right: 1px solid var(--border);
     backdrop-filter: blur(12px);
+    z-index: 1300;
 }
 
 .newChatBtn {
@@ -139,13 +140,31 @@
 
 @media (max-width: 720px) {
     .sidebar {
-        width: 100%;
+        position: fixed;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        width: min(84vw, 320px);
         min-width: 0;
-        height: auto;
-        max-height: 36vh;
+        height: 100dvh;
+        max-height: none;
+        transition: transform 220ms ease;
+        will-change: transform;
     }
 
     .history {
-        max-height: 18vh;
+        max-height: none;
+    }
+
+    .sidebar.closed {
+        transform: translateX(-100%);
+    }
+
+    .sidebar.open {
+        transform: translateX(0%);
+    }
+
+    .sign {
+        margin-bottom: calc(10px + env(safe-area-inset-bottom));
     }
 }
