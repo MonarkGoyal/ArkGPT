@@ -7,6 +7,8 @@ import { apiUrl } from "./config.js";
 import getLocalAssistantReply from "./localAssistant.js";
 import { appendLocalMessages } from "./localHistory.js";
 
+const RESPONSE_MODES = ["default", "tutor", "concise", "deep"];
+
 function ChatWindow({ onToggleSidebar }) {
     const {prompt, setPrompt, setReply, currThreadId, setPrevChats, setNewChat, prevChats} = useContext(MyContext);
     const [loading, setLoading] = useState(false);
@@ -16,11 +18,14 @@ function ChatWindow({ onToggleSidebar }) {
     const [feedbackMessage, setFeedbackMessage] = useState("");
     const [feedbackStatus, setFeedbackStatus] = useState("");
     const [feedbackLoading, setFeedbackLoading] = useState(false);
-    const [tutorMode, setTutorMode] = useState(() => localStorage.getItem("arkgpt_tutor_mode") === "true");
+    const [responseMode, setResponseMode] = useState(() => {
+        const storedMode = localStorage.getItem("arkgpt_response_mode");
+        return RESPONSE_MODES.includes(storedMode) ? storedMode : "default";
+    });
 
     useEffect(() => {
-        localStorage.setItem("arkgpt_tutor_mode", String(tutorMode));
-    }, [tutorMode]);
+        localStorage.setItem("arkgpt_response_mode", responseMode);
+    }, [responseMode]);
 
     const getReply = async () => {
         if(loading) return;
@@ -46,7 +51,7 @@ function ChatWindow({ onToggleSidebar }) {
             body: JSON.stringify({
                 message: userMessage,
                 threadId: currThreadId,
-                mode: tutorMode ? "tutor" : "default"
+                mode: responseMode
             })
         };
 
@@ -69,7 +74,7 @@ function ChatWindow({ onToggleSidebar }) {
             appendLocalMessages(currThreadId, threadTitle, [{ role: "assistant", content: res.reply }]);
         } catch(err) {
             console.log(err);
-            const fallbackReply = getLocalAssistantReply(userMessage, prevChats, tutorMode ? "tutor" : "default");
+            const fallbackReply = getLocalAssistantReply(userMessage, prevChats, responseMode === "tutor" ? "tutor" : "default");
             setPrevChats((prevChats) => [
                 ...prevChats,
                 { role: "assistant", content: fallbackReply }
@@ -150,8 +155,12 @@ function ChatWindow({ onToggleSidebar }) {
             {
                 isOpen && 
                 <div className="dropDown">
-                    <div className="dropDownItem" onClick={() => setTutorMode((value) => !value)}>
-                        <i className="fa-solid fa-graduation-cap"></i> Tutor mode {tutorMode ? "on" : "off"}
+                    <div className="dropDownItem" onClick={() => {
+                        const currentIndex = RESPONSE_MODES.indexOf(responseMode);
+                        const nextMode = RESPONSE_MODES[(currentIndex + 1) % RESPONSE_MODES.length];
+                        setResponseMode(nextMode);
+                    }}>
+                        <i className="fa-solid fa-wand-magic-sparkles"></i> Mode: {responseMode}
                     </div>
                     <div className="dropDownItem" onClick={openFeedback}><i className="fa-solid fa-comment-dots"></i> Send feedback</div>
                     <div className="dropDownItem"><i className="fa-solid fa-gear"></i> Settings</div>
@@ -165,6 +174,45 @@ function ChatWindow({ onToggleSidebar }) {
             </ScaleLoader>
             
             <div className="chatInput">
+                <div className="modeRow">
+                    <label>Mode</label>
+                    <div className="modeDropdown">
+                        <button className="modeButton" type="button" aria-label="Change response mode">
+                            {responseMode}
+                            <i className="fa-solid fa-chevron-down"></i>
+                        </button>
+                        <div className="modeOptions">
+                            <button
+                                type="button"
+                                className={`modeOption ${responseMode === "default" ? "active" : ""}`}
+                                onClick={() => setResponseMode("default")}
+                            >
+                                Default
+                            </button>
+                            <button
+                                type="button"
+                                className={`modeOption ${responseMode === "tutor" ? "active" : ""}`}
+                                onClick={() => setResponseMode("tutor")}
+                            >
+                                Tutor
+                            </button>
+                            <button
+                                type="button"
+                                className={`modeOption ${responseMode === "concise" ? "active" : ""}`}
+                                onClick={() => setResponseMode("concise")}
+                            >
+                                Concise
+                            </button>
+                            <button
+                                type="button"
+                                className={`modeOption ${responseMode === "deep" ? "active" : ""}`}
+                                onClick={() => setResponseMode("deep")}
+                            >
+                                Deep
+                            </button>
+                        </div>
+                    </div>
+                </div>
                 <div className="inputBox">
                     <textarea
                         className="chatPromptInput"

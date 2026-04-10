@@ -70,6 +70,101 @@
     box-sizing: border-box;
 }
 
+.modeRow {
+    width: 100%;
+    max-width: 700px;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    margin-bottom: 0.5rem;
+}
+
+.modeRow label {
+    font-size: 0.7rem;
+    color: var(--muted);
+    flex-shrink: 0;
+}
+
+.modeDropdown {
+    flex: 0 1 auto;
+    position: relative;
+    min-width: 90px;
+}
+
+.modeButton {
+    width: 100%;
+    border: 1px solid var(--border);
+    background: rgba(255, 255, 255, 0.06);
+    color: var(--text);
+    border-radius: 8px;
+    padding: 0.35rem 0.5rem;
+    font-size: 0.76rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.3rem;
+}
+
+.modeButton:hover {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(109, 124, 255, 0.4);
+}
+
+.modeButton:focus {
+    outline: none;
+    border-color: rgba(109, 124, 255, 0.55);
+    background: rgba(255, 255, 255, 0.09);
+}
+
+.modeButton i {
+    font-size: 0.6rem;
+}
+
+.modeOptions {
+    display: none;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    margin-top: 0.4rem;
+    background: rgba(17, 23, 43, 0.96);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+    z-index: 2000;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+}
+
+.modeDropdown:focus-within .modeOptions {
+    display: block;
+}
+
+.modeDropdown:hover .modeOptions {
+    display: block;
+}
+
+.modeOption {
+    width: 100%;
+    border: none;
+    background: transparent;
+    color: var(--text);
+    padding: 0.45rem 0.6rem;
+    font-size: 0.76rem;
+    text-align: left;
+    cursor: pointer;
+    transition: background-color 120ms ease;
+}
+
+.modeOption:hover {
+    background: rgba(109, 124, 255, 0.2);
+}
+
+.modeOption.active {
+    background: rgba(109, 124, 255, 0.35);
+    color: var(--accent-strong);
+}
+
 .inputBox {
     width: 100%;
     position: relative;
@@ -268,6 +363,24 @@
 
     .chatInput {
         padding: 0 0.75rem calc(0.8rem + env(safe-area-inset-bottom));
+    }
+
+    .modeRow {
+        margin-bottom: 0.4rem;
+    }
+
+    .modeRow label {
+        font-size: 0.65rem;
+    }
+
+    .modeButton {
+        font-size: 0.7rem;
+        padding: 0.3rem 0.4rem;
+    }
+
+    .modeOption {
+        padding: 0.35rem 0.5rem;
+        font-size: 0.7rem;
     }
 
     .chatPromptInput {

@@ -9,6 +9,12 @@ services:
     envVars:
       - key: OPENAI_API_KEY
         sync: false
+      - key: OPENWEATHER_API_KEY
+        sync: false
+      - key: OPENAI_MODEL_SIMPLE
+        sync: false
+      - key: OPENAI_MODEL_COMPLEX
+        sync: false
       - key: MONGODB_URI
         sync: false
       - key: CORS_ORIGIN

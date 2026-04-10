@@ -3,6 +3,7 @@ import mongoose from "mongoose";
 import Thread from "../models/Thread.js";
 import Feedback from "../models/Feedback.js";
 import getOpenAIAPIResponse from "../utils/openai.js";
+import { isWeatherQuery, getWeatherResponse, isCalculatorQuery, getCalculatorResponse } from "../utils/services.js";
 
 const router = express.Router();
 const hasDbConnection = () => mongoose.connection.readyState === 1;
@@ -10,6 +11,7 @@ const inMemoryThreads = new Map();
 const inMemoryFeedback = [];
 const MAX_THREAD_MESSAGES = 100;
 const MODEL_CONTEXT_WINDOW = 12;
+const SUPPORTED_MODES = ["default", "tutor", "concise", "deep"];
 
 const createInMemoryThread = (threadId, title) => ({
     threadId,
@@ -47,6 +49,14 @@ router.post("/test", async(req, res) => {
         console.log(err);
         res.status(500).json({error: "Failed to save in DB"});
     }
+});
+
+router.get("/ai/capabilities", (req, res) => {
+    return res.json({
+        aiEnabled: Boolean(process.env.OPENAI_API_KEY),
+        supportedModes: SUPPORTED_MODES,
+        contextWindow: MODEL_CONTEXT_WINDOW,
+    });
 });
 
 //Get all threads
@@ -121,6 +131,7 @@ router.delete("/thread/:threadId", async (req, res) => {
 router.post("/chat", async(req, res) => {
     const {threadId, message, mode} = req.body;
     const trimmedMessage = message?.trim();
+    const resolvedMode = SUPPORTED_MODES.includes(mode) ? mode : "default";
 
     if(!threadId || !trimmedMessage) {
         return res.status(400).json({error: "missing required fields"});
@@ -153,9 +164,19 @@ router.post("/chat", async(req, res) => {
             thread.title = trimmedMessage;
         }
 
-        const assistantReply = await getOpenAIAPIResponse(trimmedMessage, getModelContext(thread.messages), mode);
+        // Check for special queries (weather, math) and handle immediately
+        let assistantReply = null;
+        if(isWeatherQuery(trimmedMessage)) {
+            assistantReply = await getWeatherResponse(trimmedMessage);
+        } else if(isCalculatorQuery(trimmedMessage)) {
+            assistantReply = getCalculatorResponse(trimmedMessage);
+        } else {
+            // Use OpenAI API for general queries
+            assistantReply = await getOpenAIAPIResponse(trimmedMessage, getModelContext(thread.messages), resolvedMode);
+        }
+
         if(!assistantReply) {
-            return res.status(502).json({error: "OpenAI did not return a valid response"});
+            return res.status(502).json({error: "Assistant did not return a valid response"});
         }
 
         thread.messages.push({role: "assistant", content: assistantReply});

@@ -32,6 +32,7 @@ To make the Pages site behave like the local app, do this:
 1. Deploy the `Backend` folder to a Node host such as Render, Railway, or Fly.io.
 	If you use Render, the included [render.yaml](render.yaml) is ready to import.
 2. Set `OPENAI_API_KEY`, `MONGODB_URI`, and `CORS_ORIGIN` in that backend host's environment variables.
+	Optional: set `OPENAI_MODEL_SIMPLE` and `OPENAI_MODEL_COMPLEX` to control model routing.
 3. Set the GitHub repository variable `VITE_API_BASE_URL` to the deployed backend URL, for example `https://your-backend.onrender.com`.
    Use `https://` only. Do not use `http://` for production.
 4. Enable GitHub Pages in the repository settings and choose GitHub Actions as the source.
@@ -59,3 +60,24 @@ Feedback submitted from the Pages site is sent to the backend `/api/feedback` en
 Backend health checks are available at `/health`, which is what Render uses for its service health path.
 
 After pushing to `main`, enable GitHub Pages in your repository settings and choose GitHub Actions as the source.
+
+## AI Features
+
+- **Response modes**: `default`, `tutor`, `concise`, `deep`
+- **Context-aware model routing** between simple and complex prompts
+- **Retry with exponential backoff** on transient OpenAI errors
+- **Capabilities endpoint**: `GET /api/ai/capabilities`
+
+### Response Modes Explained
+
+1. **Default** - General helpful assistant that answers any query directly, clearly, and concisely. Best for general questions.
+2. **Tutor** - Solves problems step-by-step with detailed explanations. Perfect for learning code, math, and complex concepts. Does not default to generic encouragement.
+3. **Concise** - Gives the shortest correct answer first, then 3 key bullet points. Ideal when you want quick information.
+4. **Deep** - Rigorous technical answers with assumptions, edge cases, and practical next steps. Great for senior-level technical discussions.
+
+### Built-in Services
+
+Beyond the AI modes, the assistant can handle:
+- **Weather queries**: Ask "What's the weather in London?" or "How will be the weather today?" (requires OPENWEATHER_API_KEY)
+- **Calculator**: Ask "What is 15 + 27?" or "Calculate 100 * 0.5" for instant math results
+- **Knowledge chat**: Default OpenAI integration for coding, explanations, creative writing, and more

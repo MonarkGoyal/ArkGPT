@@ -853,25 +853,109 @@ I can break it down simply, add examples, and show code if needed.`;
         return getClarifyingReply(contextualInput || input);
 };
 
-const getOpenAIAPIResponse = async(message, history = [], mode = "default") => {
-    if(!process.env.OPENAI_API_KEY) {
-                return getOfflineAssistantReply(message, history);
-    }
+const MAX_CONTEXT_MESSAGES = 12;
+const RETRYABLE_STATUS_CODES = new Set([408, 409, 429, 500, 502, 503, 504]);
+const SIMPLE_MODEL = process.env.OPENAI_MODEL_SIMPLE || "gpt-4o-mini";
+const COMPLEX_MODEL = process.env.OPENAI_MODEL_COMPLEX || "gpt-4o";
 
-    const normalizedHistory = Array.isArray(history)
+const normalizeHistory = (history = []) => {
+    return Array.isArray(history)
         ? history
             .filter((entry) => (entry?.role === "user" || entry?.role === "assistant") && typeof entry?.content === "string")
             .map((entry) => ({ role: entry.role, content: entry.content }))
-            .slice(-12)
+            .slice(-MAX_CONTEXT_MESSAGES)
         : [];
+};
 
+const isComplexPrompt = (message = "", history = [], mode = "default") => {
+    if(mode === "deep") return true;
+    const lowered = message.toLowerCase();
+    const complexityHints = [
+        "architecture",
+        "optimize",
+        "tradeoff",
+        "root cause",
+        "debug",
+        "compare",
+        "analyze",
+        "design",
+        "production",
+        "scalable",
+        "security"
+    ];
+
+    const hasComplexIntent = complexityHints.some((hint) => lowered.includes(hint));
+    const hasLongPrompt = message.length > 280;
+    const hasLongHistory = Array.isArray(history) && history.length >= 8;
+
+    return hasComplexIntent || hasLongPrompt || hasLongHistory;
+};
+
+const selectModelForRequest = (message = "", history = [], mode = "default") => {
+    return isComplexPrompt(message, history, mode) ? COMPLEX_MODEL : SIMPLE_MODEL;
+};
+
+const getSystemPrompt = (mode = "default") => {
+    if(mode === "tutor") {
+        return "You are a highly capable tutor. Solve the user's problem directly, step by step, and do not default to generic encouragement. For math, code, logic, and reasoning questions, produce the answer first, then a concise explanation. If the prompt is vague, ask one clarifying question instead of giving a generic fallback.";
+    }
+
+    if(mode === "concise") {
+        return "You are a helpful assistant. Give the shortest correct answer first, then add at most three key bullet points.";
+    }
+
+    if(mode === "deep") {
+        return "You are a senior technical assistant. Provide a structured, rigorous answer with assumptions, solution, edge cases, and practical next steps.";
+    }
+
+    return "You are a helpful assistant that answers any user query directly, clearly, and concisely.";
+};
+
+const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+const fetchChatCompletionWithRetry = async(options, maxAttempts = 3) => {
+    let lastError = null;
+
+    for(let attempt = 1; attempt <= maxAttempts; attempt++) {
+        try {
+            const response = await fetch("https://api.openai.com/v1/chat/completions", options);
+            if(response.ok) {
+                return response;
+            }
+
+            const errorBody = await response.text();
+            const error = new Error(`OpenAI request failed (${response.status}): ${errorBody}`);
+            if(!RETRYABLE_STATUS_CODES.has(response.status) || attempt === maxAttempts) {
+                throw error;
+            }
+
+            lastError = error;
+            await wait(250 * (2 ** (attempt - 1)));
+        } catch(err) {
+            if(attempt === maxAttempts) {
+                throw err;
+            }
+            lastError = err;
+            await wait(250 * (2 ** (attempt - 1)));
+        }
+    }
+
+    throw lastError || new Error("OpenAI request failed after retries");
+};
+
+const getOpenAIAPIResponse = async(message, history = [], mode = "default") => {
+    if(!process.env.OPENAI_API_KEY) {
+        return getOfflineAssistantReply(message, history);
+    }
+
+    const normalizedHistory = normalizeHistory(history);
     const conversation = normalizedHistory.length > 0
         ? normalizedHistory
         : [{ role: "user", content: message }];
 
-    const systemPrompt = mode === "tutor"
-        ? "You are a highly capable tutor. Solve the user's problem directly, step by step, and do not default to generic encouragement. For math, code, logic, and reasoning questions, produce the answer first, then a concise explanation. If the prompt is vague, ask one clarifying question instead of giving a generic fallback."
-        : "You are a helpful assistant that answers any user query directly, clearly, and concisely.";
+    const resolvedMode = ["default", "tutor", "concise", "deep"].includes(mode) ? mode : "default";
+    const selectedModel = selectModelForRequest(message, normalizedHistory, resolvedMode);
+    const systemPrompt = getSystemPrompt(resolvedMode);
 
     const options = {
         method: "POST",
@@ -880,7 +964,7 @@ const getOpenAIAPIResponse = async(message, history = [], mode = "default") => {
             "Authorization": `Bearer ${process.env.OPENAI_API_KEY}`
         },
         body: JSON.stringify({
-            model: "gpt-4o-mini",
+            model: selectedModel,
             messages: [{
                 role: "system",
                 content: systemPrompt
@@ -889,17 +973,21 @@ const getOpenAIAPIResponse = async(message, history = [], mode = "default") => {
     };
 
     try {
-        const response = await fetch("https://api.openai.com/v1/chat/completions", options);
-        if(!response.ok) {
-            const errorBody = await response.text();
-            throw new Error(`OpenAI request failed (${response.status}): ${errorBody}`);
-        }
+        const response = await fetchChatCompletionWithRetry(options, 3);
         const data = await response.json();
-        return data?.choices?.[0]?.message?.content ?? null; //reply
+        return data?.choices?.[0]?.message?.content ?? null;
     } catch(err) {
         console.log(err);
         return getOfflineAssistantReply(message, history);
     }
 }
+
+export const __testUtils = {
+    normalizeHistory,
+    isComplexPrompt,
+    selectModelForRequest,
+    getSystemPrompt,
+    fetchChatCompletionWithRetry,
+};
 
 export default getOpenAIAPIResponse;

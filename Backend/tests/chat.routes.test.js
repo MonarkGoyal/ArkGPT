@@ -131,3 +131,14 @@ test("GET /health returns ok status", async () => {
     assert.equal(response.status, 200);
     assert.equal(response.body.status, "ok");
 });
+
+test("GET /api/ai/capabilities returns modes and ai state", async () => {
+    const app = buildApp();
+
+    const response = await request(app).get("/api/ai/capabilities");
+
+    assert.equal(response.status, 200);
+    assert.equal(Array.isArray(response.body.supportedModes), true);
+    assert.equal(response.body.supportedModes.includes("deep"), true);
+    assert.equal(typeof response.body.aiEnabled, "boolean");
+});
