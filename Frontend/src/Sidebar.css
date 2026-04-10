@@ -40,14 +40,15 @@
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
-    overflow: hidden;
+    background: linear-gradient(135deg, #2575fc, #20c997);
+    border: 1px solid rgba(255, 255, 255, 0.14);
 }
 
-.logoImage {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    display: block;
+.logoGlyph {
+    color: #f6fbff;
+    font-size: 14px;
+    font-weight: 700;
+    letter-spacing: 0.2px;
 }
 
 .logoText {

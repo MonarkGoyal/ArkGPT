@@ -1,5 +1,5 @@
 # ArkGPT
-A MERN based ChatGPT replica implemented from scratch using OpenAI.
+A MERN based AI assistant project inspired by chat interfaces and powered by OpenAI.
 
 ## Quick Start (One Command)
 
