@@ -120,7 +120,7 @@ function ChatWindow({ onToggleSidebar }) {
                     name: feedbackName.trim(),
                     message: trimmedMessage,
                     threadId: currThreadId,
-                    pageUrl: window.location.href
+                    pageUrl: `${window.location.origin}${window.location.pathname}`
                 })
             });
 

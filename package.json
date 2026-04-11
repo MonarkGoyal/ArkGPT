@@ -5,6 +5,7 @@
   "scripts": {
     "dev:up": "powershell -ExecutionPolicy Bypass -File ./scripts/start-dev.ps1",
     "dev:up:dry": "powershell -ExecutionPolicy Bypass -File ./scripts/start-dev.ps1 -DryRun",
-    "dev:down": "powershell -ExecutionPolicy Bypass -File ./scripts/stop-dev.ps1"
+    "dev:down": "powershell -ExecutionPolicy Bypass -File ./scripts/stop-dev.ps1",
+    "verify:deploy": "powershell -ExecutionPolicy Bypass -File ./scripts/verify-deploy.ps1"
   }
 }

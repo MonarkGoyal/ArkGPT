@@ -53,6 +53,26 @@ If the Pages URL was previously reported, browser reputation warnings can contin
 4. If possible, use a custom domain for production instead of the default `github.io` URL to build separate reputation.
 5. Wait for reputation cache updates (usually 24-72 hours after review and clean redeploy).
 
+### Deployment Verification Checklist (Scripted)
+
+After deploying frontend + backend, run:
+
+```powershell
+npm run verify:deploy -- -FrontendUrl https://<your-frontend-url> -BackendUrl https://<your-backend-url>
+```
+
+This verifies:
+- frontend is reachable
+- backend `/health` responds with `status: "ok"`
+- required backend security headers are present
+- CORS preflight for `/api/chat` behaves correctly for your frontend origin
+
+For local-only checks, allow HTTP explicitly:
+
+```powershell
+npm run verify:deploy -- -FrontendUrl http://localhost:5173 -BackendUrl http://localhost:8080 -AllowHttp
+```
+
 If you do not set a backend URL, the frontend still opens on GitHub Pages and falls back to local in-browser responses.
 
 Feedback submitted from the Pages site is sent to the backend `/api/feedback` endpoint. When MongoDB is available, it is stored there; otherwise, it is kept in memory until the backend restarts.

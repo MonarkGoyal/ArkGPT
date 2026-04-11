@@ -12,6 +12,10 @@ const inMemoryFeedback = [];
 const MAX_THREAD_MESSAGES = 100;
 const MODEL_CONTEXT_WINDOW = 12;
 const SUPPORTED_MODES = ["default", "tutor", "concise", "deep"];
+const RATE_WINDOW_MS = 60 * 1000;
+const CHAT_LIMIT_PER_WINDOW = 30;
+const FEEDBACK_LIMIT_PER_WINDOW = 10;
+const requestBuckets = new Map();
 
 const createInMemoryThread = (threadId, title) => ({
     threadId,
@@ -31,25 +35,48 @@ const buildFeedbackItem = ({ name, message, threadId, pageUrl }) => ({
     name: name?.trim() || "Anonymous",
     message: message.trim(),
     threadId: threadId?.trim() || null,
-    pageUrl: pageUrl?.trim() || null,
+    pageUrl: sanitizePageUrl(pageUrl),
     createdAt: new Date(),
 });
 
-//test
-router.post("/test", async(req, res) => {
-    try {
-        const thread = new Thread({
-            threadId: "abc",
-            title: "Testing New Thread2"
-        });
-
-        const response = await thread.save();
-        res.send(response);
-    } catch(err) {
-        console.log(err);
-        res.status(500).json({error: "Failed to save in DB"});
+const sanitizePageUrl = (value) => {
+    const rawValue = value?.trim();
+    if(!rawValue) {
+        return null;
     }
-});
+
+    try {
+        const parsed = new URL(rawValue);
+        if(parsed.protocol !== "https:" && parsed.protocol !== "http:") {
+            return null;
+        }
+        return `${parsed.origin}${parsed.pathname}`.slice(0, 500);
+    } catch {
+        return null;
+    }
+};
+
+const getClientKey = (req) => {
+    const forwardedFor = req.headers["x-forwarded-for"];
+    if(typeof forwardedFor === "string" && forwardedFor.trim()) {
+        return forwardedFor.split(",")[0].trim();
+    }
+    return req.ip || "unknown";
+};
+
+const isRateLimited = (req, key, maxRequests) => {
+    const now = Date.now();
+    const bucketKey = `${key}:${getClientKey(req)}`;
+    const bucket = requestBuckets.get(bucketKey);
+
+    if(!bucket || now - bucket.windowStart > RATE_WINDOW_MS) {
+        requestBuckets.set(bucketKey, { count: 1, windowStart: now });
+        return false;
+    }
+
+    bucket.count += 1;
+    return bucket.count > maxRequests;
+};
 
 router.get("/ai/capabilities", (req, res) => {
     return res.json({
@@ -129,6 +156,10 @@ router.delete("/thread/:threadId", async (req, res) => {
 });
 
 router.post("/chat", async(req, res) => {
+    if(isRateLimited(req, "chat", CHAT_LIMIT_PER_WINDOW)) {
+        return res.status(429).json({ error: "Too many chat requests. Please try again shortly." });
+    }
+
     const {threadId, message, mode} = req.body;
     const trimmedMessage = message?.trim();
     const resolvedMode = SUPPORTED_MODES.includes(mode) ? mode : "default";
@@ -199,6 +230,10 @@ router.post("/chat", async(req, res) => {
 });
 
 router.post("/feedback", async(req, res) => {
+    if(isRateLimited(req, "feedback", FEEDBACK_LIMIT_PER_WINDOW)) {
+        return res.status(429).json({ error: "Too many feedback submissions. Please try again later." });
+    }
+
     const { name, message, threadId, pageUrl } = req.body;
     const trimmedMessage = message?.trim();
 
