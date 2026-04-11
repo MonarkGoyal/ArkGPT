@@ -4,6 +4,8 @@ import Thread from "../models/Thread.js";
 import Feedback from "../models/Feedback.js";
 import getOpenAIAPIResponse from "../utils/openai.js";
 import { isWeatherQuery, getWeatherResponse, isCalculatorQuery, getCalculatorResponse } from "../utils/services.js";
+import { isDictionaryQuery, getDictionaryResponse } from "../utils/dictionary.js";
+import { isWikipediaQuery, getWikipediaSummary } from "../utils/wikipedia.js";
 
 const router = express.Router();
 const hasDbConnection = () => mongoose.connection.readyState === 1;
@@ -195,14 +197,20 @@ router.post("/chat", async(req, res) => {
             thread.title = trimmedMessage;
         }
 
-        // Check for special queries (weather, math) and handle immediately
+        // Check for special queries and handle with dedicated APIs
         let assistantReply = null;
         if(isWeatherQuery(trimmedMessage)) {
             assistantReply = await getWeatherResponse(trimmedMessage);
         } else if(isCalculatorQuery(trimmedMessage)) {
             assistantReply = getCalculatorResponse(trimmedMessage);
-        } else {
-            // Use OpenAI API for general queries
+        } else if(isDictionaryQuery(trimmedMessage)) {
+            assistantReply = await getDictionaryResponse(trimmedMessage);
+        } else if(isWikipediaQuery(trimmedMessage)) {
+            assistantReply = await getWikipediaSummary(trimmedMessage);
+        }
+
+        // Fall back to AI (OpenAI → Groq → offline) if no special handler matched or returned null
+        if(!assistantReply) {
             assistantReply = await getOpenAIAPIResponse(trimmedMessage, getModelContext(thread.messages), resolvedMode);
         }
 

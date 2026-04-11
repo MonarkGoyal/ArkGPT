@@ -756,7 +756,118 @@ const getContextualMessage = (input, history) => {
     return `${previousUserMessage.content.trim()} ${input}`.trim();
 };
 
-const getLocalAssistantReply = (message, history = []) => {
+const WIKI_PATTERNS = [
+    /^(?:what|who|where)\s+(?:is|are|was|were)\s+(?:a\s+|an\s+|the\s+)?(.+)/i,
+    /^tell\s+me\s+about\s+(.+)/i,
+    /^(?:explain|describe)\s+(?:what\s+)?(.+)/i,
+    /^(?:info|information)\s+(?:on|about)\s+(.+)/i,
+    /^(?:search|look\s*up|find)\s+(?:for\s+)?(.+)/i,
+];
+
+const DEFINE_PATTERNS = [
+    /^(?:define|definition\s+of)\s+(.+)/i,
+    /^(?:what\s+does)\s+(.+?)\s+mean\??$/i,
+    /^(?:meaning\s+of)\s+(.+)/i,
+    /^(?:what\s+is\s+the\s+meaning\s+of)\s+(.+)/i,
+    /^(?:what\s+is\s+the\s+definition\s+of)\s+(.+)/i,
+];
+
+const isLocalDictionaryQuery = (text) => DEFINE_PATTERNS.some((p) => p.test(text.trim()));
+
+const extractLocalWord = (text) => {
+    const trimmed = text.trim().replace(/[?.!]+$/g, "");
+    for (const pattern of DEFINE_PATTERNS) {
+        const match = trimmed.match(pattern);
+        if (match && match[1]) {
+            return match[1].trim().toLowerCase().replace(/[^a-z\s-]/g, "").split(/\s+/).slice(0, 3).join(" ");
+        }
+    }
+    return null;
+};
+
+const isLocalWikipediaQuery = (text) => {
+    const trimmed = text.trim();
+    if (trimmed.length < 4) return false;
+    const skipPatterns = [/weather/i, /\d+\s*[+\-*/]\s*\d+/, /^(?:hi|hello|hey|thanks|thank\s*you|how\s+are\s+you)\s*[!?.]*$/i];
+    if (skipPatterns.some((p) => p.test(trimmed))) return false;
+    return WIKI_PATTERNS.some((p) => p.test(trimmed));
+};
+
+const extractLocalWikiTopic = (text) => {
+    const trimmed = text.trim().replace(/[?.!]+$/g, "");
+    for (const pattern of WIKI_PATTERNS) {
+        const match = trimmed.match(pattern);
+        if (match && match[1]) return match[1].trim();
+    }
+    return trimmed;
+};
+
+const fetchDictionaryReply = async (message) => {
+    const word = extractLocalWord(message);
+    if (!word) return null;
+
+    try {
+        const response = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${encodeURIComponent(word)}`);
+        if (!response.ok) return response.status === 404 ? `I couldn't find a dictionary entry for "${word}".` : null;
+        const data = await response.json();
+        if (!Array.isArray(data) || data.length === 0) return null;
+
+        const entry = data[0];
+        const phonetic = entry.phonetic || entry.phonetics?.find((p) => p.text)?.text || "";
+        let reply = `**${entry.word}**${phonetic ? ` ${phonetic}` : ""}\n`;
+
+        for (const meaning of (entry.meanings || []).slice(0, 3)) {
+            reply += `\n*${meaning.partOfSpeech || ""}*\n`;
+            for (const def of (meaning.definitions || []).slice(0, 2)) {
+                reply += `- ${def.definition}\n`;
+                if (def.example) reply += `  *Example: "${def.example}"*\n`;
+            }
+        }
+        return reply.trim();
+    } catch {
+        return null;
+    }
+};
+
+const fetchWikipediaReply = async (message) => {
+    const topic = extractLocalWikiTopic(message);
+    if (!topic) return null;
+
+    try {
+        const encoded = encodeURIComponent(topic.replace(/\s+/g, "_"));
+        const response = await fetch(`https://en.wikipedia.org/api/rest_v1/page/summary/${encoded}`);
+
+        if (response.ok) {
+            const data = await response.json();
+            if (data.type === "standard" && data.extract) {
+                const url = data.content_urls?.desktop?.page || `https://en.wikipedia.org/wiki/${encoded}`;
+                return `**${data.title}**\n\n${data.extract}\n\n[Read more on Wikipedia](${url})`;
+            }
+        }
+
+        // Fallback: search
+        const searchUrl = `https://en.wikipedia.org/w/api.php?action=query&list=search&srsearch=${encodeURIComponent(topic)}&srlimit=1&format=json&origin=*`;
+        const searchResponse = await fetch(searchUrl);
+        if (!searchResponse.ok) return null;
+        const searchData = await searchResponse.json();
+        const firstResult = searchData?.query?.search?.[0];
+        if (!firstResult) return null;
+
+        const pageTitle = encodeURIComponent(firstResult.title.replace(/\s+/g, "_"));
+        const summaryResponse = await fetch(`https://en.wikipedia.org/api/rest_v1/page/summary/${pageTitle}`);
+        if (!summaryResponse.ok) return null;
+        const summaryData = await summaryResponse.json();
+        if (summaryData.type === "standard" && summaryData.extract) {
+            const url = summaryData.content_urls?.desktop?.page || `https://en.wikipedia.org/wiki/${pageTitle}`;
+            return `**${summaryData.title}**\n\n${summaryData.extract}\n\n[Read more on Wikipedia](${url})`;
+        }
+        return null;
+    } catch {
+        return null;
+    }
+};
+
+const getLocalAssistantReply = async (message, history = []) => {
     const input = (message || "").trim();
     const rawLowered = input.toLowerCase();
     const contextualInput = getContextualMessage(input, history);
@@ -953,6 +1064,21 @@ console.log(greet("World"));
 \`\`\`
 
 If you want a specific algorithm, share the name of the problem and I will give that exact code.`;
+    }
+
+    // Try free APIs before giving a generic hardcoded response
+    try {
+        if(isLocalDictionaryQuery(rawLowered)) {
+            const dictReply = await fetchDictionaryReply(rawLowered);
+            if(dictReply) return dictReply;
+        }
+
+        if(isLocalWikipediaQuery(rawLowered)) {
+            const wikiReply = await fetchWikipediaReply(rawLowered);
+            if(wikiReply) return wikiReply;
+        }
+    } catch {
+        // Free API calls failed — fall through to hardcoded response
     }
 
     if(lowered.includes("explain") || lowered.includes("what is") || lowered.startsWith("what ") || lowered.startsWith("how ")) {

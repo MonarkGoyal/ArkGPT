@@ -74,7 +74,7 @@ function ChatWindow({ onToggleSidebar }) {
             appendLocalMessages(currThreadId, threadTitle, [{ role: "assistant", content: res.reply }]);
         } catch(err) {
             console.log(err);
-            const fallbackReply = getLocalAssistantReply(userMessage, prevChats, responseMode === "tutor" ? "tutor" : "default");
+            const fallbackReply = await getLocalAssistantReply(userMessage, prevChats, responseMode === "tutor" ? "tutor" : "default");
             setPrevChats((prevChats) => [
                 ...prevChats,
                 { role: "assistant", content: fallbackReply }

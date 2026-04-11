@@ -860,6 +860,11 @@ const RETRYABLE_STATUS_CODES = new Set([408, 409, 429, 500, 502, 503, 504]);
 const SIMPLE_MODEL = process.env.OPENAI_MODEL_SIMPLE || "gpt-4o-mini";
 const COMPLEX_MODEL = process.env.OPENAI_MODEL_COMPLEX || "gpt-4o";
 
+// Groq (free tier) — uses Llama models via OpenAI-compatible API
+const GROQ_API_URL = "https://api.groq.com/openai/v1/chat/completions";
+const GROQ_SIMPLE_MODEL = process.env.GROQ_MODEL_SIMPLE || "llama-3.1-8b-instant";
+const GROQ_COMPLEX_MODEL = process.env.GROQ_MODEL_COMPLEX || "llama-3.3-70b-versatile";
+
 const normalizeHistory = (history = []) => {
     return Array.isArray(history)
         ? history
@@ -897,6 +902,10 @@ const selectModelForRequest = (message = "", history = [], mode = "default") => 
     return isComplexPrompt(message, history, mode) ? COMPLEX_MODEL : SIMPLE_MODEL;
 };
 
+const selectGroqModel = (message = "", history = [], mode = "default") => {
+    return isComplexPrompt(message, history, mode) ? GROQ_COMPLEX_MODEL : GROQ_SIMPLE_MODEL;
+};
+
 const getSystemPrompt = (mode = "default") => {
     if(mode === "tutor") {
         return "You are a highly capable tutor. Solve the user's problem directly, step by step, and do not default to generic encouragement. For math, code, logic, and reasoning questions, produce the answer first, then a concise explanation. If the prompt is vague, ask one clarifying question instead of giving a generic fallback.";
@@ -915,18 +924,18 @@ const getSystemPrompt = (mode = "default") => {
 
 const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
-const fetchChatCompletionWithRetry = async(options, maxAttempts = 3) => {
+const fetchChatCompletionWithRetry = async(url, options, maxAttempts = 3) => {
     let lastError = null;
 
     for(let attempt = 1; attempt <= maxAttempts; attempt++) {
         try {
-            const response = await fetch("https://api.openai.com/v1/chat/completions", options);
+            const response = await fetch(url, options);
             if(response.ok) {
                 return response;
             }
 
             const errorBody = await response.text();
-            const error = new Error(`OpenAI request failed (${response.status}): ${errorBody}`);
+            const error = new Error(`API request failed (${response.status}): ${errorBody}`);
             if(!RETRYABLE_STATUS_CODES.has(response.status) || attempt === maxAttempts) {
                 throw error;
             }
@@ -942,54 +951,82 @@ const fetchChatCompletionWithRetry = async(options, maxAttempts = 3) => {
         }
     }
 
-    throw lastError || new Error("OpenAI request failed after retries");
+    throw lastError || new Error("API request failed after retries");
+};
+
+const callChatAPI = async({ apiUrl, apiKey, model, systemPrompt, conversation }) => {
+    const options = {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${apiKey}`
+        },
+        body: JSON.stringify({
+            model,
+            messages: [{ role: "system", content: systemPrompt }, ...conversation]
+        })
+    };
+
+    const response = await fetchChatCompletionWithRetry(apiUrl, options, 3);
+    const data = await response.json();
+    return data?.choices?.[0]?.message?.content ?? null;
 };
 
 const getOpenAIAPIResponse = async(message, history = [], mode = "default") => {
-    if(!process.env.OPENAI_API_KEY) {
-        return getOfflineAssistantReply(message, history);
-    }
-
     const normalizedHistory = normalizeHistory(history);
     const conversation = normalizedHistory.length > 0
         ? normalizedHistory
         : [{ role: "user", content: message }];
 
     const resolvedMode = ["default", "tutor", "concise", "deep"].includes(mode) ? mode : "default";
-    const selectedModel = selectModelForRequest(message, normalizedHistory, resolvedMode);
     const systemPrompt = getSystemPrompt(resolvedMode);
 
-    const options = {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json",
-            "Authorization": `Bearer ${process.env.OPENAI_API_KEY}`
-        },
-        body: JSON.stringify({
-            model: selectedModel,
-            messages: [{
-                role: "system",
-                content: systemPrompt
-            }, ...conversation]
-        })
-    };
-
-    try {
-        const response = await fetchChatCompletionWithRetry(options, 3);
-        const data = await response.json();
-        return data?.choices?.[0]?.message?.content ?? null;
-    } catch(err) {
-        console.log(err);
-        return getOfflineAssistantReply(message, history);
+    // Try OpenAI first (if key is available)
+    if(process.env.OPENAI_API_KEY) {
+        try {
+            const selectedModel = selectModelForRequest(message, normalizedHistory, resolvedMode);
+            const reply = await callChatAPI({
+                apiUrl: "https://api.openai.com/v1/chat/completions",
+                apiKey: process.env.OPENAI_API_KEY,
+                model: selectedModel,
+                systemPrompt,
+                conversation,
+            });
+            if(reply) return reply;
+        } catch(err) {
+            console.log("OpenAI failed, trying fallback:", err?.message);
+        }
     }
+
+    // Try Groq as free fallback (if key is available)
+    if(process.env.GROQ_API_KEY) {
+        try {
+            const groqModel = selectGroqModel(message, normalizedHistory, resolvedMode);
+            const reply = await callChatAPI({
+                apiUrl: GROQ_API_URL,
+                apiKey: process.env.GROQ_API_KEY,
+                model: groqModel,
+                systemPrompt,
+                conversation,
+            });
+            if(reply) return reply;
+        } catch(err) {
+            console.log("Groq failed, using offline fallback:", err?.message);
+        }
+    }
+
+    // Final fallback: offline hardcoded assistant
+    return getOfflineAssistantReply(message, history);
 }
 
 export const __testUtils = {
     normalizeHistory,
     isComplexPrompt,
     selectModelForRequest,
+    selectGroqModel,
     getSystemPrompt,
     fetchChatCompletionWithRetry,
+    callChatAPI,
 };
 
 export default getOpenAIAPIResponse;
