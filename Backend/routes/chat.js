@@ -224,8 +224,8 @@ router.post("/chat", async(req, res) => {
         return res.json({reply: assistantReply});
     } catch(err) {
         console.log(err);
-        const message = err?.message || "Unknown backend error";
-        return res.status(500).json({error: `Backend chat failure: ${message}`});
+        const errMessage = err?.message || "Unknown backend error";
+        return res.status(500).json({error: `Backend chat failure: ${errMessage}`});
     }
 });
 
@@ -254,8 +254,8 @@ router.post("/feedback", async(req, res) => {
         return res.status(201).json({ success: "Feedback saved", feedback: feedbackItem });
     } catch(err) {
         console.log(err);
-        const message = err?.message || "Unknown backend error";
-        return res.status(500).json({error: `Feedback failure: ${message}`});
+        const errMessage = err?.message || "Unknown backend error";
+        return res.status(500).json({error: `Feedback failure: ${errMessage}`});
     }
 });
 

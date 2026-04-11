@@ -197,7 +197,9 @@ export default function App() {
     );
 }
 
-// If you want, I can also give you a version with Tailwind, localStorage, or edit mode.
+\`\`\`
+
+If you want, I can also give you a version with Tailwind, localStorage, or edit mode.
 
 This is a complete starter app, so you can paste it into App.jsx and run it.`;
 };
@@ -850,7 +852,7 @@ Please share the exact problem statement, and I will return complete runnable co
 I can break it down simply, add examples, and show code if needed.`;
     }
 
-        return getClarifyingReply(contextualInput || input);
+        return getUnknownReply(contextualInput || input);
 };
 
 const MAX_CONTEXT_MESSAGES = 12;

@@ -233,9 +233,9 @@ function ChatWindow({ onToggleSidebar }) {
                     ArkGPT can make mistakes. Check important info. See Cookie Preferences.
                 </p>
                 <div className="footer">
-                    <a href="/PRIVACY_POLICY.md" target="_blank" rel="noopener noreferrer">Privacy Policy</a>
+                    <a href="https://github.com/MonarkGoyal/ArkGPT/blob/main/Frontend/public/PRIVACY_POLICY.md" target="_blank" rel="noopener noreferrer">Privacy Policy</a>
                     <span className="footer-separator">•</span>
-                    <a href="/TERMS_OF_SERVICE.md" target="_blank" rel="noopener noreferrer">Terms of Service</a>
+                    <a href="https://github.com/MonarkGoyal/ArkGPT/blob/main/Frontend/public/TERMS_OF_SERVICE.md" target="_blank" rel="noopener noreferrer">Terms of Service</a>
                     <span className="footer-separator">•</span>
                     <a href="https://github.com/MonarkGoyal/ArkGPT" target="_blank" rel="noopener noreferrer">GitHub</a>
                 </div>
