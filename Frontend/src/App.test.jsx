@@ -8,7 +8,7 @@ describe("App", () => {
             render(<App />);
         });
 
-        expect(screen.getByText("Start a New Chat!")).toBeInTheDocument();
-        expect(screen.getByPlaceholderText("Ask anything")).toBeInTheDocument();
+        expect(screen.getByText("What can I help you with?")).toBeInTheDocument();
+        expect(screen.getByPlaceholderText("Ask anything...")).toBeInTheDocument();
     });
 });

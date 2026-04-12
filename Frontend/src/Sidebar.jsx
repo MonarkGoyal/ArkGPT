@@ -2,7 +2,7 @@ import "./Sidebar.css";
 import { useContext, useEffect, useCallback } from "react";
 import { MyContext } from "./MyContext.jsx";
 import {v1 as uuidv1} from "uuid";
-import whiteLogo from "./assets/whitelogo.jpg";
+import arkgptLogo from "./assets/arkgpt-logo.png";
 import { apiUrl } from "./config.js";
 import { deleteLocalThread, getLocalThreadMessages, getLocalThreadsSummary } from "./localHistory.js";
 
@@ -91,7 +91,7 @@ function Sidebar({ isSidebarOpen, onCloseSidebar }) {
             <button className="newChatBtn" onClick={createNewChat}>
                 <span className="logoWrap">
                     <span className="logoIcon">
-                        <img src={whiteLogo} alt="ArkGPT logo" className="logoImage" />
+                        <img src={arkgptLogo} alt="ArkGPT logo" className="logoImage" />
                     </span>
                     <span className="logoText">ArkGPT</span>
                 </span>

@@ -1,13 +1,11 @@
 import "./ChatWindow.css";
 import Chat from "./Chat.jsx";
 import { MyContext } from "./MyContext.jsx";
-import { useContext, useEffect, useState } from "react";
+import { useContext, useState } from "react";
 import {ScaleLoader} from "react-spinners";
 import { apiUrl } from "./config.js";
 import getLocalAssistantReply from "./localAssistant.js";
 import { appendLocalMessages } from "./localHistory.js";
-
-const RESPONSE_MODES = ["default", "tutor", "concise", "deep"];
 
 function ChatWindow({ onToggleSidebar }) {
     const {prompt, setPrompt, setReply, currThreadId, setPrevChats, setNewChat, prevChats} = useContext(MyContext);
@@ -18,14 +16,6 @@ function ChatWindow({ onToggleSidebar }) {
     const [feedbackMessage, setFeedbackMessage] = useState("");
     const [feedbackStatus, setFeedbackStatus] = useState("");
     const [feedbackLoading, setFeedbackLoading] = useState(false);
-    const [responseMode, setResponseMode] = useState(() => {
-        const storedMode = localStorage.getItem("arkgpt_response_mode");
-        return RESPONSE_MODES.includes(storedMode) ? storedMode : "default";
-    });
-
-    useEffect(() => {
-        localStorage.setItem("arkgpt_response_mode", responseMode);
-    }, [responseMode]);
 
     const getReply = async () => {
         if(loading) return;
@@ -42,7 +32,6 @@ function ChatWindow({ onToggleSidebar }) {
         ]);
         appendLocalMessages(currThreadId, threadTitle, [{ role: "user", content: userMessage }]);
 
-        console.log("message ", userMessage, " threadId ", currThreadId);
         const options = {
             method: "POST",
             headers: {
@@ -51,7 +40,7 @@ function ChatWindow({ onToggleSidebar }) {
             body: JSON.stringify({
                 message: userMessage,
                 threadId: currThreadId,
-                mode: responseMode
+                mode: "default"
             })
         };
 
@@ -65,7 +54,6 @@ function ChatWindow({ onToggleSidebar }) {
                 throw new Error(errorPayload.error || fallbackStatusError);
             }
             const res = await response.json();
-            console.log(res);
             setPrevChats((prevChats) => [
                 ...prevChats,
                 { role: "assistant", content: res.reply }
@@ -74,7 +62,7 @@ function ChatWindow({ onToggleSidebar }) {
             appendLocalMessages(currThreadId, threadTitle, [{ role: "assistant", content: res.reply }]);
         } catch(err) {
             console.log(err);
-            const fallbackReply = await getLocalAssistantReply(userMessage, prevChats, responseMode === "tutor" ? "tutor" : "default");
+            const fallbackReply = await getLocalAssistantReply(userMessage, prevChats);
             setPrevChats((prevChats) => [
                 ...prevChats,
                 { role: "assistant", content: fallbackReply }
@@ -84,7 +72,6 @@ function ChatWindow({ onToggleSidebar }) {
         }
         setLoading(false);
     }
-
 
     const handleProfileClick = () => {
         setIsOpen(!isOpen);
@@ -139,6 +126,10 @@ function ChatWindow({ onToggleSidebar }) {
         }
     }
 
+    const handleSuggestion = (text) => {
+        setPrompt(text);
+    }
+
     return (
         <div className="chatWindow">
             <div className="navbar">
@@ -146,7 +137,7 @@ function ChatWindow({ onToggleSidebar }) {
                     <button className="menuToggle" aria-label="Toggle menu" onClick={onToggleSidebar}>
                         <i className="fa-solid fa-bars"></i>
                     </button>
-                    <span>ArkGPT <i className="fa-solid fa-chevron-down"></i></span>
+                    <span className="navTitle">ArkGPT</span>
                 </div>
                 <div className="userIconDiv" onClick={handleProfileClick}>
                     <span className="userIcon"><i className="fa-solid fa-user"></i></span>
@@ -155,68 +146,20 @@ function ChatWindow({ onToggleSidebar }) {
             {
                 isOpen && 
                 <div className="dropDown">
-                    <div className="dropDownItem" onClick={() => {
-                        const currentIndex = RESPONSE_MODES.indexOf(responseMode);
-                        const nextMode = RESPONSE_MODES[(currentIndex + 1) % RESPONSE_MODES.length];
-                        setResponseMode(nextMode);
-                    }}>
-                        <i className="fa-solid fa-wand-magic-sparkles"></i> Mode: {responseMode}
-                    </div>
-                    <div className="dropDownItem" onClick={openFeedback}><i className="fa-solid fa-comment-dots"></i> Send feedback</div>
-                    <div className="dropDownItem"><i className="fa-solid fa-gear"></i> Settings</div>
-                    <div className="dropDownItem"><i className="fa-solid fa-cloud-arrow-up"></i> Upgrade plan</div>
-                    <div className="dropDownItem"><i className="fa-solid fa-arrow-right-from-bracket"></i> Log out</div>
+                    <div className="dropDownItem" onClick={openFeedback}><i className="fa-regular fa-comment-dots"></i> Send feedback</div>
+                    <div className="dropDownItem" onClick={() => window.open("https://github.com/MonarkGoyal/ArkGPT", "_blank")}><i className="fa-brands fa-github"></i> View on GitHub</div>
                 </div>
             }
-            <Chat></Chat>
+            <Chat onSuggestion={handleSuggestion}></Chat>
 
-            <ScaleLoader color="#fff" loading={loading}>
+            <ScaleLoader color="var(--accent)" loading={loading} height={20} width={3} margin={2}>
             </ScaleLoader>
             
             <div className="chatInput">
-                <div className="modeRow">
-                    <label>Mode</label>
-                    <div className="modeDropdown">
-                        <button className="modeButton" type="button" aria-label="Change response mode">
-                            {responseMode}
-                            <i className="fa-solid fa-chevron-down"></i>
-                        </button>
-                        <div className="modeOptions">
-                            <button
-                                type="button"
-                                className={`modeOption ${responseMode === "default" ? "active" : ""}`}
-                                onClick={() => setResponseMode("default")}
-                            >
-                                Default
-                            </button>
-                            <button
-                                type="button"
-                                className={`modeOption ${responseMode === "tutor" ? "active" : ""}`}
-                                onClick={() => setResponseMode("tutor")}
-                            >
-                                Tutor
-                            </button>
-                            <button
-                                type="button"
-                                className={`modeOption ${responseMode === "concise" ? "active" : ""}`}
-                                onClick={() => setResponseMode("concise")}
-                            >
-                                Concise
-                            </button>
-                            <button
-                                type="button"
-                                className={`modeOption ${responseMode === "deep" ? "active" : ""}`}
-                                onClick={() => setResponseMode("deep")}
-                            >
-                                Deep
-                            </button>
-                        </div>
-                    </div>
-                </div>
                 <div className="inputBox">
                     <textarea
                         className="chatPromptInput"
-                        placeholder="Ask anything"
+                        placeholder="Ask anything..."
                         rows={1}
                         value={prompt}
                         onChange={(e) => setPrompt(e.target.value)}
@@ -227,16 +170,16 @@ function ChatWindow({ onToggleSidebar }) {
                             }
                         }}
                     />
-                    <div id="submit" onClick={getReply}><i className="fa-solid fa-paper-plane"></i></div>
+                    <div id="submit" onClick={getReply}><i className="fa-solid fa-arrow-up"></i></div>
                 </div>
                 <p className="info">
-                    ArkGPT can make mistakes. Check important info. See Cookie Preferences.
+                    ArkGPT can make mistakes. Check important info.
                 </p>
                 <div className="footer">
-                    <a href="https://github.com/MonarkGoyal/ArkGPT/blob/main/Frontend/public/PRIVACY_POLICY.md" target="_blank" rel="noopener noreferrer">Privacy Policy</a>
-                    <span className="footer-separator">•</span>
-                    <a href="https://github.com/MonarkGoyal/ArkGPT/blob/main/Frontend/public/TERMS_OF_SERVICE.md" target="_blank" rel="noopener noreferrer">Terms of Service</a>
-                    <span className="footer-separator">•</span>
+                    <a href="https://github.com/MonarkGoyal/ArkGPT/blob/main/Frontend/public/PRIVACY_POLICY.md" target="_blank" rel="noopener noreferrer">Privacy</a>
+                    <span className="footer-separator">·</span>
+                    <a href="https://github.com/MonarkGoyal/ArkGPT/blob/main/Frontend/public/TERMS_OF_SERVICE.md" target="_blank" rel="noopener noreferrer">Terms</a>
+                    <span className="footer-separator">·</span>
                     <a href="https://github.com/MonarkGoyal/ArkGPT" target="_blank" rel="noopener noreferrer">GitHub</a>
                 </div>
             </div>

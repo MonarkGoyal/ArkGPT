@@ -35,16 +35,9 @@ const getWeatherResponse = async (message = "") => {
     // For demo/offline mode, return a formatted weather response
     const location = extractLocation(message);
 
-    // If no API key, return a template response
+    // If no API key, return null so the query falls through to AI (Groq/OpenAI)
     if (!process.env.OPENWEATHER_API_KEY) {
-        return `I don't have access to live weather data right now, but based on your question about ${location}:
-
-To check the actual weather, you can:
-- Visit weather.com or wunderground.com
-- Use a weather app on your phone
-- Search "weather in ${location}" on Google
-
-I can help you understand weather patterns, interpret forecasts, or discuss climate though!`;
+        return null;
     }
 
     try {
@@ -78,12 +71,15 @@ ${condition === "Clear" ? "It's a beautiful day!" : condition === "Rainy" ? "Bri
 };
 
 const isCalculatorQuery = (message = "") => {
-    const calcKeywords = ["calculate", "sum", "add", "subtract", "multiply", "divide", "math", "what is"];
     const lowered = message.toLowerCase();
 
-    // Simple check: contains math keywords OR looks like a math expression
-    return calcKeywords.some((keyword) => lowered.includes(keyword)) ||
-           /\d+\s*[+\-*/]\s*\d+/.test(message);
+    // Only trigger for actual math expressions, not "what is recursion"
+    if (/\d+\s*[+\-*/]\s*\d+/.test(message)) return true;
+
+    // "calculate", "sum of", "add X and Y" etc. with numbers present
+    const mathActionWords = ["calculate", "compute", "sum of", "add", "subtract", "multiply", "divide"];
+    const hasNumbers = /\d/.test(message);
+    return hasNumbers && mathActionWords.some((keyword) => lowered.includes(keyword));
 };
 
 const evaluateSimpleMath = (message = "") => {

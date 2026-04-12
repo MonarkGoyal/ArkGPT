@@ -1,28 +1,39 @@
 .sidebar {
-    background: linear-gradient(180deg, rgba(17, 23, 43, 0.96), rgba(10, 14, 28, 0.96));
-    color: var(--muted);
+    background: linear-gradient(180deg, rgba(15, 20, 40, 0.97), rgba(10, 14, 28, 0.98));
+    color: var(--text-secondary);
     height: 100vh;
-    width: 320px;
-    min-width: 280px;
+    width: 280px;
+    min-width: 260px;
     display: flex;
     flex-direction: column;
     justify-content: space-between;
     border-right: 1px solid var(--border);
-    backdrop-filter: blur(12px);
+    backdrop-filter: blur(16px);
     z-index: 1300;
 }
 
+/* new chat button */
 .newChatBtn {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin: 12px;
+    margin: 14px 12px;
     padding: 12px 14px;
-    border-radius: 14px;
-    background: rgba(255, 255, 255, 0.03);
+    border-radius: var(--radius);
+    background: rgba(255, 255, 255, 0.02);
     border: 1px solid var(--border);
     cursor: pointer;
-    transition: transform 150ms ease, background-color 150ms ease, border-color 150ms ease;
+    transition: transform var(--transition), background-color var(--transition), border-color var(--transition);
+}
+
+.newChatBtn:hover {
+    background-color: var(--panel-hover);
+    border-color: var(--border-hover);
+    transform: translateY(-1px);
+}
+
+.newChatBtn:active {
+    transform: translateY(0);
 }
 
 .logoWrap {
@@ -33,14 +44,15 @@
 }
 
 .logoIcon {
-    width: 28px;
-    height: 28px;
-    border-radius: 50%;
+    width: 30px;
+    height: 30px;
+    border-radius: 8px;
     display: inline-flex;
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
     overflow: hidden;
+    background: linear-gradient(135deg, var(--accent), var(--violet));
 }
 
 .logoImage {
@@ -51,28 +63,32 @@
 }
 
 .logoText {
-    font-size: 18px;
-    font-weight: 500;
-    letter-spacing: 0.2px;
+    font-size: 16px;
+    font-weight: 600;
+    letter-spacing: -0.2px;
     line-height: 1;
     white-space: nowrap;
+    color: var(--text);
 }
 
 .newChatIcon {
-    font-size: 20px;
+    font-size: 16px;
+    color: var(--text-secondary);
+    transition: color var(--transition);
 }
 
-.newChatBtn:hover {
-    background-color: rgba(255, 255, 255, 0.06);
-    border-color: rgba(255, 255, 255, 0.14);
-    transform: translateY(-1px);
+.newChatBtn:hover .newChatIcon {
+    color: var(--accent);
 }
 
+/* thread history */
 .history {
-    margin: 8px 10px 12px;
-    padding: 8px 6px;
+    margin: 6px 10px 12px;
+    padding: 4px 4px;
     height: 100%;
     overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255, 255, 255, 0.08) transparent;
 }
 
 .history li {
@@ -80,12 +96,19 @@
     cursor: pointer;
     display: flex;
     align-items: center;
-    padding: 10px 34px 10px 10px;
-    margin-bottom: 0.3rem;
-    font-size: 14px;
-    border: solid 1px transparent;
+    padding: 10px 32px 10px 12px;
+    margin-bottom: 2px;
+    font-size: 13px;
+    color: var(--text-secondary);
+    border: 1px solid transparent;
+    border-radius: var(--radius-sm);
     position: relative;
-    transition: background-color 150ms ease, border-color 150ms ease;
+    transition: background-color var(--transition), color var(--transition);
+}
+
+.history li:hover {
+    background-color: rgba(255, 255, 255, 0.04);
+    color: var(--text);
 }
 
 .threadTitle {
@@ -96,45 +119,50 @@
     text-overflow: ellipsis;
 }
 
-.history li:hover {
-    background-color: rgba(255, 255, 255, 0.05);
-    border-radius: 10px;
-}
-
-.sign {
-    padding: 12px;
-    margin: 10px;
-    font-size: 14px;
-    text-align: center;
-    border-top: solid 1px var(--border);
-}
-
 .fa-trash {
     opacity: 0;
     position: absolute;
     right: 10px;
     top: 50%;
     transform: translateY(-50%);
+    font-size: 12px;
+    transition: opacity var(--transition), color var(--transition);
 }
 
 .history li:hover .fa-trash {
-    opacity: 1;
-    color: var(--text);
+    opacity: 0.6;
+    color: var(--text-secondary);
 }
 
 .fa-trash:hover {
+    opacity: 1 !important;
     color: #f87171 !important;
 }
 
 .highlighted {
-    background-color: rgba(109, 124, 255, 0.14);
-    border-radius: 10px;
+    background-color: rgba(108, 142, 255, 0.1) !important;
+    border-color: rgba(108, 142, 255, 0.15) !important;
+    color: var(--text) !important;
+}
+
+/* footer */
+.sign {
+    padding: 14px;
+    margin: 0 10px 10px;
+    font-size: 12px;
+    text-align: center;
+    border-top: 1px solid var(--border);
+    color: var(--text-secondary);
+}
+
+.sign p {
+    opacity: 0.7;
 }
 
 @media (max-width: 900px) {
     .sidebar {
         width: 260px;
-        min-width: 260px;
+        min-width: 240px;
     }
 }
 
@@ -144,16 +172,12 @@
         left: 0;
         top: 0;
         bottom: 0;
-        width: min(84vw, 320px);
+        width: min(82vw, 300px);
         min-width: 0;
         height: 100dvh;
         max-height: none;
-        transition: transform 220ms ease;
+        transition: transform 240ms cubic-bezier(0.4, 0, 0.2, 1);
         will-change: transform;
-    }
-
-    .history {
-        max-height: none;
     }
 
     .sidebar.closed {

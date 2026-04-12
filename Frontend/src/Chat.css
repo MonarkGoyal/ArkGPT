@@ -1,41 +1,67 @@
 .chats {
     width: 100%;
-    max-width: 900px;
+    max-width: 800px;
     overflow-y: auto;
-    padding: 1rem 2rem 1rem;
+    padding: 1.25rem 2rem 1rem;
     box-sizing: border-box;
     flex: 1;
     margin: 0 auto;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255, 255, 255, 0.06) transparent;
 }
 
 .userDiv {
     display: flex;
     justify-content: flex-end;
-    font-size: 0.9rem;
+    font-size: 0.88rem;
+    margin-bottom: 0.75rem;
+    animation: messageSlideIn 250ms ease;
 }
-
 
 .gptDiv {
     text-align: left;
-    font-size: 0.9rem;
-    line-height: 1.5;
-    margin-bottom: 1rem;
+    font-size: 0.88rem;
+    line-height: 1.65;
+    margin-bottom: 1.25rem;
+    animation: messageSlideIn 300ms ease;
+}
+
+@keyframes messageSlideIn {
+    from {
+        opacity: 0;
+        transform: translateY(8px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
 .userMessage {
-    background-color: rgba(255, 255, 255, 0.08);
+    background: rgba(108, 142, 255, 0.1);
     padding: 12px 18px;
-    border-radius: 16px;
-    max-width: min(75%, 500px);
+    border-radius: 18px 18px 4px 18px;
+    max-width: min(75%, 480px);
     width: fit-content;
     margin-left: auto;
     text-align: left;
     word-break: break-word;
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(108, 142, 255, 0.12);
+    font-size: 0.88rem;
+}
+
+.gptDiv p {
+    margin-top: 0;
+    margin-bottom: 0.5rem;
+}
+
+.gptDiv p:last-child {
+    margin-bottom: 0;
 }
 
 .hljs {
-    border-radius: 14px !important;
+    border-radius: 12px !important;
+    font-size: 0.82rem !important;
 }
 
 pre {
@@ -49,22 +75,23 @@ p {
 
 @media (max-width: 900px) {
     .chats {
-        padding: 0.75rem 1rem 0.5rem;
+        padding: 0.75rem 1.25rem 0.5rem;
     }
 }
 
 @media (max-width: 720px) {
     .chats {
-        padding: 0.6rem 0.75rem 0.45rem;
+        padding: 0.6rem 0.85rem 0.4rem;
     }
 
     .userMessage {
-        max-width: 92%;
+        max-width: 88%;
         padding: 10px 14px;
+        border-radius: 16px 16px 4px 16px;
     }
 
     .gptDiv,
     .userDiv {
-        font-size: 0.88rem;
+        font-size: 0.85rem;
     }
 }

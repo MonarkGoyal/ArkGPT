@@ -5,19 +5,27 @@ import ReactMarkdown from "react-markdown";
 import rehypeHighlight from "rehype-highlight";
 import "highlight.js/styles/github-dark.css";
 
-function Chat() {
+const SUGGESTIONS = [
+    "Explain quantum computing",
+    "Write a Python sorting algorithm",
+    "What is machine learning?",
+    "Define recursion",
+    "Tips to learn JavaScript",
+];
+
+function Chat({ onSuggestion }) {
     const {newChat, prevChats, reply} = useContext(MyContext);
     const [latestReply, setLatestReply] = useState(null);
 
     useEffect(() => {
         if(reply === null) {
-            setLatestReply(null); //prevchat load
+            setLatestReply(null);
             return;
         }
 
         if(!prevChats?.length) return;
 
-        const content = reply.split(" "); //individual words
+        const content = reply.split(" ");
 
         let idx = 0;
         const interval = setInterval(() => {
@@ -33,7 +41,28 @@ function Chat() {
 
     return (
         <>
-            {newChat && <h1>Start a New Chat!</h1>}
+            {newChat && (
+                <div className="welcomeContainer">
+                    <div className="welcomeIcon">
+                        <i className="fa-solid fa-bolt"></i>
+                    </div>
+                    <h1 className="welcomeTitle">What can I help you with?</h1>
+                    <p className="welcomeSubtitle">
+                        Ask me anything — code, math, definitions, general knowledge, and more.
+                    </p>
+                    <div className="welcomeSuggestions">
+                        {SUGGESTIONS.map((text, i) => (
+                            <button
+                                key={i}
+                                className="suggestionChip"
+                                onClick={() => onSuggestion?.(text)}
+                            >
+                                {text}
+                            </button>
+                        ))}
+                    </div>
+                </div>
+            )}
             <div className="chats">
                 {
                     prevChats?.slice(0, -1).map((chat, idx) => 
