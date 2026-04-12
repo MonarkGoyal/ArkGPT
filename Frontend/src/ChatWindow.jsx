@@ -2,7 +2,7 @@ import "./ChatWindow.css";
 import Chat from "./Chat.jsx";
 import { MyContext } from "./MyContext.jsx";
 import { useContext, useState } from "react";
-import {ScaleLoader} from "react-spinners";
+
 import { apiUrl } from "./config.js";
 import getLocalAssistantReply from "./localAssistant.js";
 import { appendLocalMessages } from "./localHistory.js";
@@ -152,8 +152,16 @@ function ChatWindow({ onToggleSidebar }) {
             }
             <Chat onSuggestion={handleSuggestion}></Chat>
 
-            <ScaleLoader color="var(--accent)" loading={loading} height={20} width={3} margin={2}>
-            </ScaleLoader>
+            {loading && (
+                <div className="thinkingIndicator">
+                    <div className="thinkingDots">
+                        <span></span>
+                        <span></span>
+                        <span></span>
+                    </div>
+                    <span className="thinkingText">ArkGPT is thinking</span>
+                </div>
+            )}
             
             <div className="chatInput">
                 <div className="inputBox">
