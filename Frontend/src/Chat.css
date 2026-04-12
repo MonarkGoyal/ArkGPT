@@ -73,6 +73,51 @@ p {
     margin-top: 0;
 }
 
+/* Thinking Animation */
+.thinking-container {
+    display: flex;
+    align-items: center;
+    margin-top: 0.5rem;
+}
+
+.thinking-text {
+    font-size: 0.88rem;
+    color: var(--text-secondary);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-style: italic;
+    opacity: 0.8;
+}
+
+.thinking-text i {
+    color: var(--accent);
+    animation: boltPulse 1.5s ease-in-out infinite;
+}
+
+@keyframes boltPulse {
+    0%, 100% { opacity: 0.5; transform: scale(0.95); }
+    50% { opacity: 1; transform: scale(1.05); text-shadow: 0 0 10px var(--accent-glow); }
+}
+
+.thinking-text span {
+    animation: blink 1.4s infinite both;
+}
+
+.thinking-text span:nth-child(2) {
+    animation-delay: 0.2s;
+}
+
+.thinking-text span:nth-child(3) {
+    animation-delay: 0.4s;
+}
+
+@keyframes blink {
+    0% { opacity: 0.2; }
+    20% { opacity: 1; }
+    100% { opacity: 0.2; }
+}
+
 @media (max-width: 900px) {
     .chats {
         padding: 0.75rem 1.25rem 0.5rem;

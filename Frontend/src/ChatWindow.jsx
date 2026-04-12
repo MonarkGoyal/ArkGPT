@@ -2,7 +2,6 @@ import "./ChatWindow.css";
 import Chat from "./Chat.jsx";
 import { MyContext } from "./MyContext.jsx";
 import { useContext, useState } from "react";
-
 import { apiUrl } from "./config.js";
 import getLocalAssistantReply from "./localAssistant.js";
 import { appendLocalMessages } from "./localHistory.js";
@@ -25,6 +24,7 @@ function ChatWindow({ onToggleSidebar }) {
         setLoading(true);
         setNewChat(false);
         setPrompt("");
+        setReply(null);
         const threadTitle = userMessage.slice(0, 48) || "New Chat";
         setPrevChats((prevChats) => [
             ...prevChats,
@@ -150,18 +150,7 @@ function ChatWindow({ onToggleSidebar }) {
                     <div className="dropDownItem" onClick={() => window.open("https://github.com/MonarkGoyal/ArkGPT", "_blank")}><i className="fa-brands fa-github"></i> View on GitHub</div>
                 </div>
             }
-            <Chat onSuggestion={handleSuggestion}></Chat>
-
-            {loading && (
-                <div className="thinkingIndicator">
-                    <div className="thinkingDots">
-                        <span></span>
-                        <span></span>
-                        <span></span>
-                    </div>
-                    <span className="thinkingText">ArkGPT is thinking</span>
-                </div>
-            )}
+            <Chat onSuggestion={handleSuggestion} isLoading={loading}></Chat>
             
             <div className="chatInput">
                 <div className="inputBox">

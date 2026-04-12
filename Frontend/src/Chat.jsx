@@ -13,7 +13,7 @@ const SUGGESTIONS = [
     "Tips to learn JavaScript",
 ];
 
-function Chat({ onSuggestion }) {
+function Chat({ onSuggestion, isLoading }) {
     const {newChat, prevChats, reply} = useContext(MyContext);
     const [latestReply, setLatestReply] = useState(null);
 
@@ -65,36 +65,36 @@ function Chat({ onSuggestion }) {
             )}
             <div className="chats">
                 {
-                    prevChats?.slice(0, -1).map((chat, idx) => 
-                        <div className={chat.role === "user"? "userDiv" : "gptDiv"} key={idx}>
-                            {
-                                chat.role === "user"? 
-                                <p className="userMessage">{chat.content}</p> : 
-                                <ReactMarkdown rehypePlugins={[rehypeHighlight]}>{chat.content}</ReactMarkdown>
-                            }
+                    prevChats?.map((chat, idx) => {
+                        const isLast = idx === prevChats.length - 1;
+                        
+                        if (isLast && latestReply !== null && chat.role === "assistant") {
+                            return (
+                                <div className="gptDiv" key={"typing"}>
+                                    <ReactMarkdown rehypePlugins={[rehypeHighlight]}>{latestReply}</ReactMarkdown>
+                                </div>
+                            );
+                        }
+
+                        return (
+                            <div className={chat.role === "user" ? "userDiv" : "gptDiv"} key={idx}>
+                                {
+                                    chat.role === "user" ? 
+                                    <p className="userMessage">{chat.content}</p> : 
+                                    <ReactMarkdown rehypePlugins={[rehypeHighlight]}>{chat.content}</ReactMarkdown>
+                                }
+                            </div>
+                        );
+                    })
+                }
+
+                {isLoading && (
+                    <div className="gptDiv thinking-container">
+                        <div className="thinking-text">
+                            <i className="fa-solid fa-bolt"></i> ArkGPT is thinking<span>.</span><span>.</span><span>.</span>
                         </div>
-                    )
-                }
-
-                {
-                    prevChats.length > 0  && (
-                        <>
-                            {
-                                latestReply === null ? (
-                                    <div className="gptDiv" key={"non-typing"} >
-                                    <ReactMarkdown rehypePlugins={[rehypeHighlight]}>{prevChats[prevChats.length-1].content}</ReactMarkdown>
-                                </div>
-                                ) : (
-                                    <div className="gptDiv" key={"typing"} >
-                                     <ReactMarkdown rehypePlugins={[rehypeHighlight]}>{latestReply}</ReactMarkdown>
-                                </div>
-                                )
-
-                            }
-                        </>
-                    )
-                }
-
+                    </div>
+                )}
             </div>
         </>
     )
